@@ -18,6 +18,7 @@ import {
   Send,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Minus,
   Brain
 } from "lucide-react"
@@ -45,6 +46,7 @@ export default function ReviewPage({
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState("")
   const [isAiTyping, setIsAiTyping] = useState(false)
+  const [isScrollable, setIsScrollable] = useState(false)
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -114,6 +116,20 @@ export default function ReviewPage({
     setChatMessages([])
   }, [currentQuestionIndex])
 
+  // Check if question card is scrollable
+  useEffect(() => {
+    const checkScrollable = () => {
+      const scrollArea = document.getElementById('question-scroll-area')
+      if (scrollArea) {
+        setIsScrollable(scrollArea.scrollHeight > scrollArea.clientHeight)
+      }
+    }
+    
+    checkScrollable()
+    window.addEventListener('resize', checkScrollable)
+    return () => window.removeEventListener('resize', checkScrollable)
+  }, [currentQuestionIndex])
+
   if (!exam || !attempt || !currentQuestion) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -172,13 +188,13 @@ export default function ReviewPage({
       </header>
 
       <main className="flex-1 container mx-auto px-4 py-3 sm:py-4 overflow-hidden max-h-[calc(100vh-4rem)]">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4 h-full">
-          <div className="flex flex-col h-full space-y-3">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4 h-full overflow-hidden">
+          <div className="flex flex-col h-full space-y-3 overflow-y-auto scrollbar-visible pr-2">
             <div className="space-y-2">
               <Card className="border-border/50 shadow-sm">
-                <CardContent className="p-2">
-                  <h3 className="font-semibold text-xs text-foreground mb-2">Questions</h3>
-                  <div className="grid grid-cols-5 gap-1 max-h-[140px] overflow-y-auto pr-1">
+                <CardContent className="p-1.5">
+                  <h3 className="font-semibold text-xs text-foreground mb-1">Questions</h3>
+                  <div className="grid grid-cols-5 gap-1 max-h-[80px] overflow-y-auto pr-1">
                     {questions.map((question, index) => {
                       const answer = answers.find((a) => a.questionId === question.id)
                       const correct = answer?.isCorrect
@@ -205,7 +221,7 @@ export default function ReviewPage({
                     })}
                   </div>
 
-                  <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-border/50 text-[10px] font-medium">
+                  <div className="flex flex-wrap gap-1 mt-1 pt-1 border-t border-border/50 text-[9px] font-medium">
                     <div className="flex items-center gap-1">
                       <div className="h-2 w-2 rounded bg-success/20 border border-success/30" />
                       <span className="text-muted-foreground">Correct</span>
@@ -222,38 +238,6 @@ export default function ReviewPage({
                 </CardContent>
               </Card>
 
-              <div className="flex items-center justify-between gap-3 mt-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentQuestionIndex((prev) => prev - 1)}
-                  disabled={currentQuestionIndex === 0}
-                  className="px-3 sm:px-4 h-10 text-sm"
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Previous
-                </Button>
-                <span className="text-sm font-medium text-muted-foreground">
-                  {currentQuestionIndex + 1} / {questions.length}
-                </span>
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentQuestionIndex((prev) => prev + 1)}
-                  disabled={currentQuestionIndex === questions.length - 1}
-                  className="px-3 sm:px-4 h-10 text-sm"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-
-              <div className="mt-4">
-                <Link href={`/exam/${id}/result?attempt=${attemptId}`}>
-                  <Button variant="outline" className="w-full border-dashed hover:border-primary/50 text-[10px] h-8">
-                    <ArrowLeft className="h-3 w-3 mr-1" />
-                    Back to Results Summary
-                  </Button>
-                </Link>
-              </div>
             </div>
 
             <div className="flex-1 overflow-hidden">
@@ -266,8 +250,8 @@ export default function ReviewPage({
                     : "border-border/50"
                 } h-full overflow-hidden`}
               >
-                <CardContent className="p-3 sm:p-4 h-full flex flex-col">
-                  <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                <CardContent className="p-2 sm:p-3 h-full flex flex-col">
+                  <div className="flex flex-wrap items-center gap-1.5 mb-1">
                     <Badge variant="outline" className="bg-background text-xs">Q{currentQuestionIndex + 1}</Badge>
                     <Badge variant="secondary" className="bg-background text-xs">{currentQuestion.marks} marks</Badge>
                     {currentQuestion.topic && (
@@ -293,12 +277,12 @@ export default function ReviewPage({
                     )}
                   </div>
 
-                  <div className="flex-1 overflow-y-auto space-y-4">
-                    <p className="text-base sm:text-xl font-semibold leading-8 text-foreground">
+                  <div id="question-scroll-area" className="flex-1 flex flex-col gap-0.5">
+                    <p className="text-sm sm:text-lg font-semibold leading-5 sm:leading-6 text-foreground">
                       {currentQuestion.questionText}
                     </p>
 
-                    <div className="space-y-3">
+                    <div className="space-y-1">
                       {currentQuestion.options.map((option) => {
                         const isSelected = currentAnswer?.selectedOptionId === option.id
                         const isCorrectOption = option.id === currentQuestion.correctOptionId
@@ -306,7 +290,7 @@ export default function ReviewPage({
                         return (
                           <div
                             key={option.id}
-                            className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                            className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${
                               isCorrectOption
                                 ? "border-success bg-success/10 shadow-sm"
                                 : isSelected
@@ -315,7 +299,7 @@ export default function ReviewPage({
                             }`}
                           >
                             <span
-                              className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold uppercase shrink-0 ${
+                              className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold uppercase shrink-0 ${
                                 isCorrectOption
                                   ? "bg-success text-white shadow-md shadow-success/20"
                                   : isSelected
@@ -325,7 +309,7 @@ export default function ReviewPage({
                             >
                               {option.id}
                             </span>
-                            <span className={`flex-1 text-sm sm:text-base leading-relaxed ${isCorrectOption ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                            <span className={`flex-1 text-xs sm:text-sm leading-tight ${isCorrectOption ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                               {option.text}
                             </span>
                             {isCorrectOption && (
@@ -340,28 +324,69 @@ export default function ReviewPage({
                     </div>
 
                     {mistakeAnalysis && (
-                      <Card className="border-accent/20 bg-accent/5 shadow-sm">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm flex items-center gap-2 text-accent">
-                            <Sparkles className="h-3.5 w-3.5" />
-                            AI Analysis
+                      <Card className="border-accent/20 bg-accent/5 shadow-sm mt-0">
+                        <CardHeader className="pb-1 pt-1.5">
+                          <CardTitle className="text-[10px] flex items-center gap-1 text-accent">
+                            <Sparkles className="h-2.5 w-2.5" />
+                            Analysis
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-0">
-                          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                        <CardContent className="pt-0.5 pb-1">
+                          <p className="text-[10px] text-muted-foreground leading-tight">
                             {mistakeAnalysis.explanation}
                           </p>
                         </CardContent>
                       </Card>
                     )}
                   </div>
+
+                  {isScrollable && (
+                    <div className="flex justify-center pt-1">
+                      <div className="animate-bounce">
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentQuestionIndex((prev) => prev - 1)}
+                disabled={currentQuestionIndex === 0}
+                className="px-3 sm:px-4 h-10 text-sm"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              <span className="text-sm font-medium text-muted-foreground">
+                {currentQuestionIndex + 1} / {questions.length}
+              </span>
+              <Button
+                variant="outline"
+                onClick={() => setCurrentQuestionIndex((prev) => prev + 1)}
+                disabled={currentQuestionIndex === questions.length - 1}
+                className="px-3 sm:px-4 h-10 text-sm"
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+
+            <div>
+              <Link href={`/exam/${id}/result?attempt=${attemptId}`}>
+                <Button variant="outline" className="w-full border-dashed hover:border-primary/50 text-[10px] h-8">
+                  <ArrowLeft className="h-3 w-3 mr-1" />
+                  Back to Results Summary
+                </Button>
+              </Link>
+            </div>
           </div>
 
-          <aside className="flex flex-col h-full min-h-0">
-            <Card className="border-border/50 shadow-sm h-full min-h-0 overflow-hidden">
+          <aside className="flex flex-col h-full min-h-0 overflow-hidden">
+            <Card className="border-border/50 shadow-sm h-full min-h-0 flex flex-col overflow-hidden">
               <CardHeader className="border-b border-border/50 bg-muted/30 p-4">
                 <div className="flex items-center gap-2 text-primary">
                   <Sparkles className="h-5 w-5" />
@@ -371,8 +396,8 @@ export default function ReviewPage({
                   Ask your question about the current review and get a guided explanation.
                 </p>
               </CardHeader>
-              <CardContent className="flex flex-col p-4 h-full min-h-0">
-                <ScrollArea className="flex-1 pr-4 -mr-4 min-h-0">
+              <CardContent className="flex flex-col p-4 h-full min-h-0 overflow-hidden">
+                <ScrollArea className="flex-1 pr-4 -mr-4 min-h-0 scrollbar-visible w-full">
                   <div className="space-y-4 pr-4">
                     <div className="flex gap-3">
                       <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 shadow-md">

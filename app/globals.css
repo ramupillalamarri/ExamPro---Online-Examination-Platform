@@ -177,6 +177,34 @@ html {
   background: var(--muted-foreground);
 }
 
+/* Custom scrollbars for specific areas */
+.scrollbar-visible::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.scrollbar-visible::-webkit-scrollbar-track {
+  background: var(--background);
+  border-radius: 10px;
+}
+
+.scrollbar-visible::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 10px;
+  border: 2px solid var(--background);
+}
+
+.scrollbar-visible::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+  opacity: 0.8;
+}
+
+/* Firefox scrollbar */
+.scrollbar-visible {
+  scrollbar-color: var(--primary) var(--background);
+  scrollbar-width: thin;
+}
+
 /* Animation keyframes */
 @keyframes float {
   0%, 100% { transform: translateY(0) rotate(0deg); }

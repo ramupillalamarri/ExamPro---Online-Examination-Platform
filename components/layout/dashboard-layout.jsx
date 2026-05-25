@@ -226,7 +226,7 @@ export function DashboardLayout({ children }) {
             </div>
 
             {/* Navigation */}
-            <ScrollArea className="flex-1 py-4 relative">
+            <ScrollArea className="flex-1 py-4 relative scrollbar-visible">
               <nav className="px-3 space-y-1">
                 {
                 navItems.filter(item => item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item, index) => {
