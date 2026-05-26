@@ -1,8 +1,28 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
-export async function GET() {
+export async function GET(req) {
   try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('userId');
+
+    // If userId is provided, get users who joined this user's exams
+    if (userId) {
+      const res = await query(`
+        SELECT DISTINCT ua.*, u.id, u.email, u.full_name as "fullName", u.user_code as "userCode"
+        FROM user_access ua
+        JOIN users u ON ua.user_id = u.id
+        WHERE ua.accessed_user_id = $1
+        ORDER BY ua.created_at DESC
+      `, [userId]);
+
+      return NextResponse.json({
+        students: res.rows,
+        count: res.rowCount,
+      });
+    }
+
+    // Otherwise, get all students (legacy behavior for admin dashboard)
     // 1. Get all students with their total attempts and average score
     const studentsRes = await query(`
       SELECT 

@@ -18,6 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { CodeEntry } from "@/components/code-entry"
+import { MyExams } from "@/components/my-exams"
 import {
   Dialog,
   DialogContent,
@@ -43,27 +45,34 @@ import {
   Bell,
   Search,
   Check,
-  Users
+  Users,
+  Home
 } from "lucide-react"
 
 
 export function DashboardLayout({ children }) {
-  const { isAuthenticated, user, logout } = useExamStore()
+  const { isHydrated, isAuthenticated, user, logout } = useExamStore()
   const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [sidebarSearch, setSidebarSearch] = useState("")
+  const [isLargeScreen, setIsLargeScreen] = useState(true)
 
+  // Handle responsive sidebar - MUST be defined before early returns
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login")
+    const checkScreenSize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024)
     }
-  }, [isAuthenticated, router])
+    
+    checkScreenSize()
+    window.addEventListener("resize", checkScreenSize)
+    return () => window.removeEventListener("resize", checkScreenSize)
+  }, [])
 
   // Handle Command+K for search
   useEffect(() => {
-    const down = ( e) => {
+    const down = (e) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setSearchOpen((open) => !open)
@@ -72,6 +81,23 @@ export function DashboardLayout({ children }) {
     document.addEventListener("keydown", down)
     return () => document.removeEventListener("keydown", down)
   }, [])
+
+  // Close sidebar on route change (mobile only)
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [pathname])
+
+  // Check auth after all hooks
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push("/login")
+    }
+  }, [isHydrated, isAuthenticated, router])
+
+  // Return early only AFTER all hooks are defined
+  if (!isHydrated || !isAuthenticated || !user) {
+    return null
+  }
 
   const handleLogout = () => {
     logout()
@@ -82,22 +108,18 @@ export function DashboardLayout({ children }) {
     return null
   }
 
-  const isAdmin = user.role === "admin"
-
-  const adminNavItems = [
-    { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/students", label: "Students", icon: Users },
-    { href: "/admin/folders", label: "Folders", icon: FolderOpen },
-    { href: "/admin/exams", label: "Exams", icon: FileText },
+  // Unified navigation for all users (both teacher and student features)
+  const unifiedNavItems = [
+    { href: "/student", label: "Home", icon: Home },
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/exams", label: "Available Exams", icon: BookOpen },
+    { href: "/attempts", label: "My Attempts", icon: History },
+    { href: "/create-exam", label: "Create Exam", icon: FileText },
+    { href: "/folders", label: "Folders", icon: FolderOpen },
+    { href: "/students", label: "Students", icon: Users },
   ]
 
-  const studentNavItems = [
-    { href: "/student", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/student/exams", label: "Available Exams", icon: BookOpen },
-    { href: "/student/history", label: "My Attempts", icon: History },
-  ]
-
-  const navItems = isAdmin ? adminNavItems : studentNavItems
+  const navItems = unifiedNavItems
 
   return (
     <div className="min-h-screen bg-background">
@@ -170,12 +192,12 @@ export function DashboardLayout({ children }) {
         <motion.aside
           initial={false}
           animate={{
-            x: sidebarOpen ? 0 : typeof window !== 'undefined' && window.innerWidth < 1024 ? -280 : 0,
+            x: sidebarOpen ? 0 : isLargeScreen ? 0 : -280,
           }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           className={cn(
-            "fixed inset-y-0 left-0 z-50 w-[280px] bg-sidebar border-r border-sidebar-border transform lg:translate-x-0 lg:static lg:inset-auto",
-            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+            "fixed lg:static inset-y-0 left-0 z-50 w-[280px] bg-sidebar border-r border-sidebar-border lg:translate-x-0",
+            !isLargeScreen && "top-16"
           )}
         >
           <div className="flex flex-col h-full relative overflow-hidden">
@@ -226,72 +248,99 @@ export function DashboardLayout({ children }) {
             </div>
 
             {/* Navigation */}
-            <ScrollArea className="flex-1 py-4 relative scrollbar-visible">
-              <nav className="px-3 space-y-1">
+            <div style={{
+              display: 'flex',
+              flex: 1,
+              minHeight: '200px',
+              flexDirection: 'column',
+              padding: '12px 8px',
+              position: 'relative',
+              overflowY: 'auto',
+            }}>
+              <nav style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+                paddingRight: '12px',
+              }}>
                 {
                 navItems.filter(item => item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item, index) => {
                   const isActive = pathname === item.href || (item.href !== "/admin" && item.href !== "/student" && pathname.startsWith(item.href))
                   return (
-                    <motion.div
-                      key={item.href}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
                     <Link
+                      key={item.href}
                       href={item.href}
                       onClick={() => setSidebarOpen(false)}
+                      className="w-full block"
+                      style={{ display: 'block' }}
                     >
-                    <motion.div
-                      whileHover={{ x: 4 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden",
-                        isActive
-                          ? "bg-gradient-to-r from-sidebar-primary/20 to-glow-1/20 text-sidebar-foreground shadow-lg border border-sidebar-primary/20"
-                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                      )}
+                    <div
+                      style={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        fontSize: isActive ? '14px' : '12px',
+                        fontWeight: '500',
+                        height: '36px',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        backgroundColor: isActive ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                        color: isActive ? '#ffffff' : 'rgba(255,255,255,0.7)',
+                        border: isActive ? '1px solid rgba(59, 130, 246, 0.2)' : 'none',
+                        transition: 'all 200ms ease',
+                      }}
+                      className="group hover:bg-sidebar-accent/50"
                     >
+                    <div
+                      style={{
+                        height: '24px',
+                        width: '24px',
+                        borderRadius: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        position: 'relative',
+                        zIndex: 10,
+                        backgroundColor: isActive ? 'linear-gradient(to bottom right, rgb(59, 130, 246), rgb(249, 115, 22))' : 'rgba(255,255,255,0.1)',
+                        color: isActive ? '#ffffff' : 'rgba(255,255,255,0.7)',
+                      }}
+                    >
+                    <item.icon style={{ height: '14px', width: '14px' }} />
+                    </div>
+                    <span style={{ 
+                      flex: 1, 
+                      textAlign: 'left',
+                      zIndex: 10,
+                      position: 'relative',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}>
+                      {item.label}
+                    </span>
                     {isActive && (
-                        <motion.div
-                          layoutId="activeNav"
-                          className="absolute inset-0 bg-gradient-to-r from-sidebar-primary/10 to-transparent"
-                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        />
-                      )
-                    }
-                    <motion.div
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      className={cn(
-                        "h-9 w-9 rounded-lg flex items-center justify-center transition-colors",
-                        isActive
-                          ? "bg-gradient-to-br from-sidebar-primary to-glow-1 text-white shadow-lg shadow-sidebar-primary/30"
-                          : "bg-sidebar-accent/50 text-sidebar-foreground/70 group-hover:bg-sidebar-accent"
-                      )}
-                    >
-                    <item.icon className="h-4 w-4" />
-                    </motion.div>
-                    <span className="relative">{item.label}</span>
-                    {isActive && (
-                      <motion.div
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="ml-auto"
-                      >
-                        <ChevronRight className="h-4 w-4 text-sidebar-primary" />
-                      </motion.div>
+                      <div style={{ marginLeft: '4px', flexShrink: 0, zIndex: 10 }}>
+                        <ChevronRight style={{ height: '14px', width: '14px', color: 'rgb(59, 130, 246)' }} />
+                      </div>
                     )}
 
-                        </motion.div>
+                        </div>
                       </Link>
-                    </motion.div>
                   )
                 })
                 }
               </nav>
+            </div>
 
+            {/* Code Entry Section */}
+            <CodeEntry />
 
-            </ScrollArea>
+            {/* My Exams Section */}
+            <MyExams />
 
             {/* User Menu */}
             <div className="p-4 border-t border-sidebar-border relative">
@@ -308,7 +357,7 @@ export function DashboardLayout({ children }) {
                       >
                         <Avatar className="h-10 w-10 border-2 border-sidebar-primary/30 shadow-lg shadow-sidebar-primary/20">
                           <AvatarFallback className="bg-gradient-to-br from-sidebar-primary to-glow-1 text-white font-semibold">
-                            {user.fullName.charAt(0).toUpperCase()}
+                            {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
                           </AvatarFallback>
                         </Avatar>
                         <motion.span
@@ -319,14 +368,14 @@ export function DashboardLayout({ children }) {
                       </motion.div>
                       <div className="flex flex-col items-start text-left">
                         <span className="text-sm font-semibold truncate max-w-[140px]">
-                          {user.fullName}
+                          {user?.fullName || 'User'}
                         </span>
                         <span className="text-xs text-sidebar-foreground/60 capitalize flex items-center gap-1">
                           <div className={cn(
                             "w-1.5 h-1.5 rounded-full",
-                            user.role === "admin" ? "bg-warning" : "bg-success"
+                            user?.role === "admin" ? "bg-warning" : "bg-success"
                           )} />
-                          {user.role}
+                          {user?.role || 'student'}
                         </span>
                       </div>
                       <Settings className="h-4 w-4 ml-auto text-sidebar-foreground/40" />
@@ -337,7 +386,7 @@ export function DashboardLayout({ children }) {
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-muted-foreground">
-                    {user.email}
+                    {user?.email || 'N/A'}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">

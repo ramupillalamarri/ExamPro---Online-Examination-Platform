@@ -91,7 +91,7 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      router.push(user.role === "admin" ? "/admin" : "/student")
+      router.push("/dashboard")
     }
   }, [isAuthenticated, user, router])
 

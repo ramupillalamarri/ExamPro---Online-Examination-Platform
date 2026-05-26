@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
@@ -49,10 +50,23 @@ const scaleIn = {
 
 export default function StudentDashboard() {
   const router = useRouter()
-  const { user, exams, attempts, answers, aiFeedback } = useExamStore()
+  const { isHydrated, isAuthenticated, user, exams, attempts, answers, aiFeedback } = useExamStore()
 
+  // Define useEffect to handle auth redirect
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push("/login")
+    }
+  }, [isHydrated, isAuthenticated, router])
+
+  // Return null to prevent rendering while loading/unauthenticated
+  if (!isHydrated || !isAuthenticated || !user) {
+    return null
+  }
+
+  // All calculations below only run if authenticated
   const publishedExams = exams.filter((e) => e.isPublished)
-  const userAttempts = attempts.filter((a) => a.userId === user?.id)
+  const userAttempts = attempts.filter((a) => a.userId === user.id)
   const completedAttempts = userAttempts.filter((a) => a.status === "graded")
 
   const averageScore =
