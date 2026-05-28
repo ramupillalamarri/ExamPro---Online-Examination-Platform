@@ -29,10 +29,15 @@ export async function GET() {
 export async function POST( req) {
   try {
     const data = await req.json();
-    const { id, examId, questionText, options, correctOptionId, subject, topic, marks, orderIndex } = data;
+    let { id, examId, questionText, options, correctOptionId, subject, topic, marks, orderIndex } = data;
     
     if (!examId || !questionText || !options || !correctOptionId) {
       return NextResponse.json({ error: 'Missing required question fields' }, { status: 400 });
+    }
+
+    // Generate ID if not provided
+    if (!id) {
+      id = `question-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
     }
 
     const res = await query(`

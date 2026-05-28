@@ -1,6 +1,7 @@
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
+import { TouristGuide } from '@/components/tourist-guide'
 import './globals.css'
 
 const inter = Inter({ 
@@ -37,6 +38,7 @@ export default function RootLayout({
             },
           }}
         />
+        <TouristGuide />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

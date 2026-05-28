@@ -29,7 +29,7 @@ import {
 } from "lucide-react"
 
 export default function StudentsPage() {
-  const { exams, fetchData } = useExamStore()
+  const { exams, fetchData, user, getAccessedByUsers } = useExamStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [students, setStudents] = useState([])
   const [attemptsData, setAttemptsData] = useState([])
@@ -39,7 +39,8 @@ export default function StudentsPage() {
   useEffect(() => {
     const loadStudentData = async () => {
       try {
-        const res = await fetch('/api/students')
+        // Fetch students who are accessing this teacher's 6-digit code
+        const res = await fetch(`/api/students?userId=${user?.id}`)
         if (!res.ok) throw new Error('Failed to fetch students data')
         const data = await res.json()
         setStudents(data.students || [])
@@ -50,8 +51,14 @@ export default function StudentsPage() {
       }
     }
 
-    loadStudentData()
-  }, [])
+    if (user?.id) {
+      loadStudentData()
+      
+      // Auto-poll student performance and AI data dynamically every 5 seconds
+      const pollInterval = setInterval(loadStudentData, 5000)
+      return () => clearInterval(pollInterval)
+    }
+  }, [user?.id])
 
   const studentStats = useMemo(() => {
     return students.map((student) => ({

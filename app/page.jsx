@@ -91,7 +91,11 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      router.push("/dashboard")
+      if (user.role === 'student') {
+        router.push('/student')
+      } else {
+        router.push('/dashboard')
+      }
     }
   }, [isAuthenticated, user, router])
 
@@ -177,7 +181,7 @@ export default function LandingPage() {
             </motion.div>
             
             <div className="hidden md:flex items-center gap-6">
-              {["Features", "Pricing", "About"].map((item, i) => (
+              {["Features", "Pricing"].map((item) => (
                 <motion.a
                   key={item}
                   href={`#${item.toLowerCase()}`}
@@ -190,6 +194,17 @@ export default function LandingPage() {
                   />
                 </motion.a>
               ))}
+              <Link href="/about">
+                <motion.span
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group cursor-pointer"
+                  whileHover={{ y: -2 }}
+                >
+                  About
+                  <motion.span
+                    className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"
+                  />
+                </motion.span>
+              </Link>
             </div>
             
             <Link href="/login">

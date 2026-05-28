@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 
 export async function POST(req) {
@@ -22,12 +22,13 @@ export async function POST(req) {
     const { id: questionId, questionText, options, correctOptionId, topic, subject } = question;
     const correctOption = options?.find((option) => option.id === correctOptionId) || {};
     const apiKey = process.env.GROQ_API_KEY;
-    const groqModel = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
+    const groqModel = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
     let groqError = null;
 
     if (apiKey) {
       try {
-        const groq = new Groq({ apiKey });
+        // Enforce a 15-second timeout so it succeeds reliably on standard networks
+        const groq = new Groq({ apiKey, timeout: 15000 });
 
         const historyMessages = chatHistory
           .filter((entry) => entry && entry.role && entry.content)

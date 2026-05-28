@@ -50,14 +50,16 @@ const scaleIn = {
 
 export default function StudentDashboard() {
   const router = useRouter()
-  const { isHydrated, isAuthenticated, user, exams, attempts, answers, aiFeedback } = useExamStore()
+  const { isHydrated, isAuthenticated, user, exams, attempts, answers, aiFeedback, fetchData } = useExamStore()
 
-  // Define useEffect to handle auth redirect
+  // Define useEffect to handle auth redirect & fetch fresh attempts/rankings
   useEffect(() => {
     if (isHydrated && !isAuthenticated) {
       router.push("/login")
+    } else if (isHydrated && isAuthenticated) {
+      fetchData()
     }
-  }, [isHydrated, isAuthenticated, router])
+  }, [isHydrated, isAuthenticated, router, fetchData])
 
   // Return null to prevent rendering while loading/unauthenticated
   if (!isHydrated || !isAuthenticated || !user) {

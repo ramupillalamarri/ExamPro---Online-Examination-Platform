@@ -33,9 +33,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-export default function ExamPage({
-  params,
-}) {
+export default function ExamPage({ params }) {
   const { id } = use(params)
   const router = useRouter()
   const {
@@ -78,6 +76,32 @@ export default function ExamPage({
     }
   }, [exam, isAuthenticated, router])
 
+  // Fetch exam data from API on mount if questions empty
+  useEffect(() => {
+    const loadData = async () => {
+      if (isAuthenticated && user?.id) {
+        try {
+          const res = await fetch(`/api/data?userId=${encodeURIComponent(user.id)}`)
+          if (res.ok) {
+            const data = await res.json()
+            if (data.exams || data.questions) {
+              useExamStore.setState({ 
+                exams: data.exams || [], 
+                questions: data.questions || [] 
+              })
+            }
+          }
+        } catch (err) {
+          console.error('Failed to load exam data:', err)
+        }
+      }
+    }
+    // Load data if questions are empty
+    if (questions.length === 0 && isAuthenticated) {
+      loadData()
+    }
+  }, [user?.id, isAuthenticated, questions.length])
+
   // Timer logic
   useEffect(() => {
     if (!isStarted || timeRemaining === null || timeRemaining <= 0) return
@@ -99,24 +123,26 @@ export default function ExamPage({
   useEffect(() => {
     if (!isStarted || !attempt) return
 
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (document.hidden) {
-        // Increment warning
-        updateAttemptWarnings(attempt.id)
-        
-        // Use a slight timeout to let state flush or check warning count directly
-        const nextWarnings = attempt.warnings + 1
-        
-        if (nextWarnings >= 4) {
-          exitFullscreen()
-          setIsSubmitting(true)
-          toast.error("Exam terminated: Tab switched more than 3 times!")
-          // Automatically submit exam
-          submitAttempt(attempt.id).then(() => {
+        try {
+          // Await the warning update to get the actual warning count from server
+          const updatedAttempt = await updateAttemptWarnings(attempt.id)
+          const currentWarnings = updatedAttempt?.warnings || (attempt.warnings + 1)
+          
+          if (currentWarnings >= 4) {
+            exitFullscreen()
+            setIsSubmitting(true)
+            toast.error("Exam terminated: Tab switched more than 3 times!")
+            // Automatically submit exam
+            await submitAttempt(attempt.id)
             setShowTerminationDialog(true)
-          })
-        } else {
-          setShowWarningDialog(true)
+          } else {
+            setShowWarningDialog(true)
+          }
+        } catch (err) {
+          console.error('Error handling visibility change:', err)
+          toast.error('Error recording tab switch. Please retry.')
         }
       }
     }
@@ -161,7 +187,11 @@ export default function ExamPage({
 
   const handleStartExam = async () => {
     try {
-      const currentAttempt = startAttempt(id)
+      const currentAttempt = await startAttempt(id)
+      if (!currentAttempt) {
+        toast.error('Unable to start exam. Please try again.')
+        return
+      }
       if (currentAttempt.timeRemainingSeconds) {
         setTimeRemaining(currentAttempt.timeRemainingSeconds)
       } else {
@@ -217,11 +247,28 @@ export default function ExamPage({
   ).length
 
   if (!exam || !currentQuestion) {
+    if (!exam) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Card className="max-w-md w-full border-border/50">
+            <CardHeader>
+              <CardTitle className="text-destructive">Exam Not Found</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">The exam you're looking for doesn't exist or isn't published.</p>
+              <Button onClick={() => router.push("/student/exams")} className="w-full">
+                Back to Exams
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading exam...</p>
+          <p className="text-muted-foreground">Loading exam questions...</p>
         </div>
       </div>
     )

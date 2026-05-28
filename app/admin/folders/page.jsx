@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useExamStore } from "@/lib/store"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,6 +31,7 @@ import { FolderOpen, Plus, Pencil, Trash2, FileText } from "lucide-react"
 import { toast } from "sonner"
 
 export default function FoldersPage() {
+  const router = useRouter()
   const { folders, exams, addFolder, updateFolder, deleteFolder } = useExamStore()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
@@ -195,8 +197,11 @@ export default function FoldersPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <CardTitle className="text-lg mb-1">{folder.name}</CardTitle>
+                <CardContent
+                  className="cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => router.push(`/admin/exams?folderId=${folder.id}`)}
+                >
+                  <CardTitle className="text-lg mb-1 hover:text-primary transition-colors">{folder.name}</CardTitle>
                   <CardDescription className="flex items-center gap-1">
                     <FileText className="h-3.5 w-3.5" />
                     {examCount} {examCount === 1 ? "exam" : "exams"}

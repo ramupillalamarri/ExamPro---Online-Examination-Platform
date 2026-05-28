@@ -39,13 +39,16 @@ export default function ResultPage({
     getExamQuestions,
     getAttemptAnswers,
     aiFeedback,
+    fetchData,
   } = useExamStore()
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/login")
+    } else {
+      fetchData()
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, router, fetchData])
 
   const exam = exams.find((e) => e.id === id)
   const attempt = attempts.find((a) => a.id === attemptId)

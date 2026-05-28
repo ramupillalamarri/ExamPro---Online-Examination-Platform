@@ -354,3 +354,9 @@ html {
   opacity: 0.03;
   pointer-events: none;
 }
+
+/* Slower breathing bounce soft animation utility */
+.animate-bounce-slow {
+  animation: bounce-soft 3.5s ease-in-out infinite;
+}
+

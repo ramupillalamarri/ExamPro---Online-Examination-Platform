@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { useExamStore } from "@/lib/store"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,6 +8,22 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import {
   Users,
   FileText,
@@ -18,7 +35,10 @@ import {
   Sparkles,
   FolderOpen,
   BarChart3,
-  Edit2
+  Edit2,
+  ChevronRight,
+  Brain,
+  AlertCircle,
 } from "lucide-react"
 import {
   BarChart,
@@ -55,7 +75,12 @@ const scaleIn = {
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const { exams, attempts, folders } = useExamStore()
+  const { exams, attempts, folders, user, questions, answers, fetchData } = useExamStore()
+  const [selectedExamAttempts, setSelectedExamAttempts] = useState(null)
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const publishedExams = exams.filter((e) => e.isPublished)
   const totalAttempts = attempts.length
@@ -192,7 +217,11 @@ export default function AdminDashboard() {
               <Card className={`${action.color} border-0 cursor-pointer transition-colors shadow-sm`}>
                 <CardContent className="p-4 flex items-center gap-3">
                   <action.icon className="h-5 w-5" />
-                  <span className="font-semibold text-sm">{action.label}</span>
+                  {action.label === "AI Insights" ? (
+                    <span className="font-semibold text-sm">{user?.userCode || action.label}</span>
+                  ) : (
+                    <span className="font-semibold text-sm">{action.label}</span>
+                  )}
                 </CardContent>
               </Card>
             </Link>
@@ -491,7 +520,9 @@ export default function AdminDashboard() {
                     key={exam.id}
                     variants={fadeInUp}
                     whileHover={{ scale: 1.01, x: 4 }}
-                    className="flex flex-wrap sm:flex-nowrap items-center justify-between p-4 rounded-xl border border-border/50 bg-background/50 hover:bg-background transition-colors shadow-sm gap-4"
+                    className="flex flex-wrap sm:flex-nowrap items-center justify-between p-4 rounded-xl border border-border/50 bg-background/50 hover:bg-background transition-colors shadow-sm gap-4 cursor-pointer"
+                    onClick={() => router.push(`/admin/exams/${exam.id}/analysis`)}
+                    title="View exam analysis"
                   >
                     <div className="flex items-center gap-4">
                       <motion.div
@@ -501,7 +532,9 @@ export default function AdminDashboard() {
                         <FileText className="h-5 w-5 text-primary" />
                       </motion.div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground truncate max-w-[200px] sm:max-w-md">{exam.title}</p>
+                        <p className="font-semibold text-foreground truncate max-w-[200px] sm:max-w-md">
+                          {exam.title}
+                        </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {exam.folderName || "No folder"} • {exam.questionCount || 0} questions
                         </p>
@@ -522,7 +555,15 @@ export default function AdminDashboard() {
                           {exam.isPublished ? "Published" : "Draft"}
                         </Badge>
                       </div>
-                      <Button onClick={() => router.push(`/admin/exams/${exam.id}`)} variant="outline" size="sm" className="h-8 gap-1 border-dashed hover:border-primary/50">
+                      <Button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/admin/exams/${exam.id}`);
+                        }} 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 gap-1 border-dashed hover:border-primary/50"
+                      >
                         <Edit2 className="h-3 w-3" />
                         Edit
                       </Button>
@@ -534,6 +575,215 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Exam Performance Analysis Modal */}
+      <Dialog
+        open={!!selectedExamAttempts}
+        onOpenChange={() => setSelectedExamAttempts(null)}
+      >
+        <DialogContent className="max-w-4xl border-border/50 bg-card/95 backdrop-blur-sm max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-2 font-bold">
+              <Brain className="h-6 w-6 text-primary animate-pulse" />
+              Analysis for {selectedExamAttempts?.title}
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Comprehensive analytics, student performance statistics, and key insights for this exam.
+            </DialogDescription>
+          </DialogHeader>
+
+          {(() => {
+            const examAttempts = attempts
+              .filter((a) => a.examId === selectedExamAttempts?.id && a.status === 'graded')
+              .sort((a, b) => b.score - a.score);
+
+            const totalAttemptsCount = examAttempts.length;
+
+            if (totalAttemptsCount === 0) {
+              return (
+                <div className="text-center py-12">
+                  <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-40" />
+                  <p className="text-lg font-medium text-foreground">No completed attempts recorded yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">Once students complete this exam, in-depth analytical reports will appear here.</p>
+                </div>
+              );
+            }
+
+            // Calculations
+            const maxPossibleMarks = selectedExamAttempts?.questionCount * 2 || examAttempts[0]?.totalMarks || 10;
+            const avgScore = examAttempts.reduce((sum, a) => sum + (a.score / (a.totalMarks || maxPossibleMarks)) * 100, 0) / totalAttemptsCount;
+            const highestScore = Math.max(...examAttempts.map(a => a.score));
+            const lowestScore = Math.min(...examAttempts.map(a => a.score));
+            const passedAttempts = examAttempts.filter(a => (a.score / (a.totalMarks || maxPossibleMarks)) >= 0.5);
+            const passRate = (passedAttempts.length / totalAttemptsCount) * 100;
+            const avgWarnings = examAttempts.reduce((sum, a) => sum + (a.warnings || 0), 0) / totalAttemptsCount;
+
+            // Topic Performance Analysis
+            const examQuestions = questions.filter(q => q.examId === selectedExamAttempts?.id);
+            const questionAnalysis = examQuestions.map(q => {
+              const qAnswers = answers.filter(ans => ans.questionId === q.id);
+              const correctCount = qAnswers.filter(ans => ans.isCorrect === true || ans.selectedOptionId?.toString() === q.correctOptionId?.toString()).length;
+              const totalAnswers = qAnswers.length;
+              const successRate = totalAnswers > 0 ? (correctCount / totalAnswers) * 100 : null;
+              return {
+                id: q.id,
+                text: q.questionText,
+                topic: q.topic || 'General',
+                correctCount,
+                totalAnswers,
+                successRate
+              };
+            });
+
+            const topicAnalysisMap = {};
+            questionAnalysis.forEach(qa => {
+              if (!topicAnalysisMap[qa.topic]) {
+                topicAnalysisMap[qa.topic] = { total: 0, correct: 0 };
+              }
+              if (qa.successRate !== null) {
+                topicAnalysisMap[qa.topic].total += qa.totalAnswers;
+                topicAnalysisMap[qa.topic].correct += qa.correctCount;
+              }
+            });
+            const topicAnalysis = Object.entries(topicAnalysisMap)
+              .map(([topic, data]) => {
+                const rate = data.total > 0 ? (data.correct / data.total) * 100 : 0;
+                return { topic, rate, total: data.total };
+              })
+              .filter(t => t.total > 0)
+              .sort((a, b) => a.rate - b.rate);
+
+            return (
+              <div className="space-y-6 py-4">
+                {/* Stats Dashboard Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 shadow-sm">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Total Attempts</span>
+                    <span className="text-2xl font-black text-primary mt-1 block">{totalAttemptsCount}</span>
+                    <span className="text-[10px] text-muted-foreground mt-1 block">Completed attempts</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-success/5 border border-success/10 shadow-sm">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Class Average</span>
+                    <span className="text-2xl font-black text-success mt-1 block">{avgScore.toFixed(1)}%</span>
+                    <span className="text-[10px] text-muted-foreground mt-1 block">Mean score rate</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-accent/5 border border-accent/10 shadow-sm">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Score Range</span>
+                    <span className="text-2xl font-black text-accent mt-1 block">{highestScore}/{lowestScore}</span>
+                    <span className="text-[10px] text-muted-foreground mt-1 block">Highest / Lowest marks</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-warning/5 border border-warning/10 shadow-sm">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Passing Rate</span>
+                    <span className="text-2xl font-black text-warning mt-1 block">{passRate.toFixed(1)}%</span>
+                    <span className="text-[10px] text-muted-foreground mt-1 block">Scored &ge; 50%</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left Box: Topic Performance & Warning */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5 border-b border-border/50 pb-2">
+                      <TrendingUp className="h-4 w-4 text-primary" />
+                      Topic Breakdown (Hardest First)
+                    </h4>
+                    {topicAnalysis.length === 0 ? (
+                      <p className="text-xs text-muted-foreground py-4 text-center">No topic-specific response analytics available.</p>
+                    ) : (
+                      <div className="space-y-3.5 max-h-[220px] overflow-y-auto pr-1">
+                        {topicAnalysis.map((ta, idx) => {
+                          const isHard = ta.rate < 50;
+                          const isModerate = ta.rate >= 50 && ta.rate < 75;
+                          const colorClass = isHard ? 'bg-destructive' : isModerate ? 'bg-warning' : 'bg-success';
+                          const textColorClass = isHard ? 'text-destructive' : isModerate ? 'text-warning' : 'text-success';
+                          
+                          return (
+                            <div key={idx} className="space-y-1.5">
+                              <div className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-slate-700">{ta.topic}</span>
+                                <span className={`font-black ${textColorClass}`}>{ta.rate.toFixed(1)}%</span>
+                              </div>
+                              <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/50">
+                                <div 
+                                  className={`h-full rounded-full ${colorClass}`} 
+                                  style={{ width: `${ta.rate}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Proctoring Info warning */}
+                    {avgWarnings > 1 && (
+                      <div className="p-3.5 rounded-xl bg-destructive/5 border border-destructive/10 flex items-start gap-2.5 shadow-sm">
+                        <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5 animate-pulse" />
+                        <div>
+                          <p className="text-xs font-bold text-destructive">Proctoring Alert</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">
+                            This exam tracks an average of <strong>{avgWarnings.toFixed(1)} proctoring warnings</strong> (such as tab switches) per student. Ensure students maintain focus and follow academic integrity.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Box: Student Roster Leaderboard */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5 border-b border-border/50 pb-2">
+                      <Users className="h-4 w-4 text-primary" />
+                      Leaderboard Roster
+                    </h4>
+                    <div className="max-h-[220px] overflow-y-auto border border-border/50 rounded-xl shadow-sm">
+                      <Table>
+                        <TableHeader className="bg-muted/50 sticky top-0 z-10">
+                          <TableRow className="text-xs">
+                            <TableHead className="py-2.5">Email</TableHead>
+                            <TableHead className="text-center py-2.5">Score</TableHead>
+                            <TableHead className="text-right py-2.5">Review</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {examAttempts.map((attempt) => (
+                            <TableRow key={attempt.id} className="hover:bg-muted/20 text-xs">
+                              <TableCell className="font-semibold text-foreground py-2 max-w-[150px] truncate">
+                                {attempt.studentEmail || attempt.userId}
+                              </TableCell>
+                              <TableCell className="text-center font-bold text-success py-2">
+                                {attempt.score}/{attempt.totalMarks}
+                              </TableCell>
+                              <TableCell className="text-right py-2">
+                                <Button
+                                  onClick={() => {
+                                    setSelectedExamAttempts(null);
+                                    router.push(`/exam/${selectedExamAttempts.id}/review?attempt=${attempt.id}`);
+                                  }}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-primary hover:bg-primary/10 font-bold text-[10px] px-2 h-7"
+                                >
+                                  Review
+                                  <ChevronRight className="h-3 w-3 ml-0.5" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          <DialogFooter className="border-t border-border/30 pt-4">
+            <Button variant="outline" onClick={() => setSelectedExamAttempts(null)} className="font-bold text-xs">
+              Close Analysis
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

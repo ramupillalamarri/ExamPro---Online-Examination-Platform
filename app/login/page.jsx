@@ -43,7 +43,7 @@ const decodeJwt = (token) => {
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleEnabled, setIsGoogleEnabled] = useState(false)
-  const { login } = useExamStore()
+  const { login, setCurrentRole } = useExamStore()
   const router = useRouter()
   const GOOGLE_CLIENT_ID =
     process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID
@@ -130,9 +130,10 @@ export default function LoginPage() {
       const role = email === "ramupillalamarri66@gmail.com" ? "admin" : "student"
 
       await login(email, role, fullName, avatarUrl)
-      toast.success(`Welcome ${fullName}! Logged in as ${role === 'admin' ? 'Teacher (Admin)' : 'Student'}`)
+      setCurrentRole("student")
+      toast.success(`Welcome ${fullName}!`)
       
-      router.push(role === "admin" ? "/admin" : "/student")
+      router.push("/student")
     } catch (err) {
       console.error(err)
       toast.error("Google Login failed. Please try again.")

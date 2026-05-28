@@ -14,16 +14,20 @@ import { toast } from "sonner"
 
 export default function ExamsPage() {
   const router = useRouter()
-  const { isAuthenticated, exams, currentUserCode, fetchExamsByUserCode } = useExamStore()
+  const { isAuthenticated, isHydrated, user, exams, currentUserCode, fetchExamsByUserCode } = useExamStore()
   const [searchTerm, setSearchTerm] = useState("")
   const [filteredExams, setFilteredExams] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login")
+    if (isHydrated) {
+      if (!isAuthenticated) {
+        router.push("/login")
+      } else if (user?.role === "student") {
+        router.push("/student/exams")
+      }
     }
-  }, [isAuthenticated, router])
+  }, [isHydrated, isAuthenticated, user, router])
 
   // Fetch exams when currentUserCode changes
   useEffect(() => {

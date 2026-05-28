@@ -8,7 +8,11 @@ export async function POST(req) {
     const { userId, userCode } = await req.json();
 
     if (!userId || !userCode) {
-      return NextResponse.json({ error: 'userId and userCode are required' }, { status: 400 });
+      return NextResponse.json({ 
+        success: false,
+        error: 'userId and userCode are required',
+        message: 'userId and userCode are required'
+      }, { status: 400 });
     }
 
     // Find the user with this code
@@ -18,7 +22,11 @@ export async function POST(req) {
     );
 
     if (userRes.rows.length === 0) {
-      return NextResponse.json({ error: 'Invalid code' }, { status: 404 });
+      return NextResponse.json({ 
+        success: false,
+        error: 'Invalid code',
+        message: 'Invalid code'
+      }, { status: 404 });
     }
 
     const accessedUser = userRes.rows[0];
@@ -39,7 +47,11 @@ export async function POST(req) {
     });
   } catch (error) {
     console.error('User Access Route Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ 
+      success: false,
+      error: error.message,
+      message: 'Failed to join. Please try again.'
+    }, { status: 500 });
   }
 }
 

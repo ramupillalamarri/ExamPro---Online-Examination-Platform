@@ -41,9 +41,14 @@ export async function GET( req) {
 
 export async function POST( req) {
   try {
-    const { id, examId, userId } = await req.json();
+    let { id, examId, userId } = await req.json();
     if (!examId || !userId) {
       return NextResponse.json({ error: 'Exam ID and User ID are required' }, { status: 400 });
+    }
+
+    // Generate ID if not provided
+    if (!id) {
+      id = `attempt-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
     }
 
     // Check if in_progress attempt already exists
@@ -77,26 +82,13 @@ export async function POST( req) {
       });
     }
 
-    // Fetch exam and determine max attempts (fallback to 2 if DB doesn't have column)
-    // Check if exams table has a max_attempts column
-    let maxAttempts = 2;
-    const colRes = await query("SELECT column_name FROM information_schema.columns WHERE table_name = 'exams' AND column_name = 'max_attempts'");
-    let exam;
-    if (colRes.rowCount > 0) {
-      const examRes = await query('SELECT title, duration_minutes, max_attempts FROM exams WHERE id = $1', [examId]);
-      if (examRes.rowCount === 0) {
-        return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
-      }
-      exam = examRes.rows[0];
-      maxAttempts = exam.max_attempts || 2;
-    } else {
-      const examRes = await query('SELECT title, duration_minutes FROM exams WHERE id = $1', [examId]);
-      if (examRes.rowCount === 0) {
-        return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
-      }
-      exam = examRes.rows[0];
-      maxAttempts = 2;
+    // Fetch exam details
+    const examRes = await query('SELECT title, duration_minutes, max_attempts as "maxAttempts" FROM exams WHERE id = $1', [examId]);
+    if (examRes.rowCount === 0) {
+      return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
     }
+    const exam = examRes.rows[0];
+    const maxAttempts = exam.maxAttempts !== null && exam.maxAttempts !== undefined ? exam.maxAttempts : 1;
 
     // Server-side enforcement: count completed (graded) attempts for this user
     const completedRes = await query('SELECT COUNT(*)::integer as count FROM attempts WHERE exam_id = $1 AND user_id = $2 AND status = $3', [examId, userId, 'graded']);

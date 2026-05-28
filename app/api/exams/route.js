@@ -10,13 +10,16 @@ export async function GET(req) {
     let params = [];
 
     if (userCode) {
-      // Get exams created by the user with this specific code
+      // Get exams created by the user with this specific code.
+      // Support cases where `exams.created_by` might contain the user's id, email, or the code itself
+      // by checking multiple possibilities to make matching more robust.
       sqlQuery = `
         SELECT 
           e.id, 
           e.title, 
           e.description, 
           e.duration_minutes as "durationMinutes", 
+          e.max_attempts as "maxAttempts", 
           e.folder_id as "folderId", 
           e.is_published as "isPublished", 
           e.negative_marking::numeric::double precision as "negativeMarking", 
@@ -38,9 +41,15 @@ export async function GET(req) {
           FROM attempts 
           GROUP BY exam_id
         ) a ON e.id = a.exam_id
-        WHERE e.created_by = (
-          SELECT id FROM users WHERE user_code = $1
-        ) AND e.is_published = true
+        WHERE (
+          -- created_by matches canonical user id for this code
+          e.created_by = (SELECT id FROM users WHERE user_code = $1)
+          -- OR created_by directly stores the 6-digit code
+          OR e.created_by = $1
+          -- OR created_by stores the user's email
+          OR e.created_by = (SELECT email FROM users WHERE user_code = $1)
+        )
+        AND e.is_published = true
         ORDER BY e.created_at DESC
       `;
       params = [userCode];
@@ -52,6 +61,7 @@ export async function GET(req) {
           e.title, 
           e.description, 
           e.duration_minutes as "durationMinutes", 
+          e.max_attempts as "maxAttempts", 
           e.folder_id as "folderId", 
           e.is_published as "isPublished", 
           e.negative_marking::numeric::double precision as "negativeMarking", 
@@ -92,10 +102,15 @@ export async function GET(req) {
 export async function POST( req) {
   try {
     const data = await req.json();
-    const { id, title, description, durationMinutes, folderId, isPublished, negativeMarking, createdBy } = data;
+    let { id, title, description, durationMinutes, folderId, isPublished, negativeMarking, createdBy, maxAttempts } = data;
     
     if (!title) {
       return NextResponse.json({ error: 'Exam title is required' }, { status: 400 });
+    }
+
+    // Generate ID if not provided
+    if (!id) {
+      id = `exam-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
     }
 
     // Get folder name if folderId exists
@@ -108,9 +123,9 @@ export async function POST( req) {
     }
 
     const res = await query(`
-      INSERT INTO exams (id, title, description, duration_minutes, folder_id, is_published, negative_marking, created_by)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING *, duration_minutes as "durationMinutes", folder_id as "folderId", is_published as "isPublished", negative_marking as "negativeMarking", created_by as "createdBy", created_at as "createdAt", updated_at as "updatedAt"
+      INSERT INTO exams (id, title, description, duration_minutes, folder_id, is_published, negative_marking, created_by, max_attempts)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *, duration_minutes as "durationMinutes", folder_id as "folderId", is_published as "isPublished", negative_marking as "negativeMarking", created_by as "createdBy", created_at as "createdAt", updated_at as "updatedAt", max_attempts as "maxAttempts"
     `, [
       id,
       title,
@@ -119,7 +134,8 @@ export async function POST( req) {
       folderId || null,
       isPublished ?? false,
       negativeMarking || 0,
-      createdBy || 'admin-1'
+      createdBy || 'admin-1',
+      maxAttempts !== null && maxAttempts !== undefined ? maxAttempts : 1
     ]);
 
     const exam = res.rows[0];
@@ -157,6 +173,7 @@ export async function PUT( req) {
       isPublished: 'is_published',
       negativeMarking: 'negative_marking',
       createdBy: 'created_by',
+      maxAttempts: 'max_attempts',
     };
 
     Object.keys(updates).forEach((key) => {
@@ -182,7 +199,7 @@ export async function PUT( req) {
       UPDATE exams 
       SET ${setFields.join(', ')} 
       WHERE id = $${idParamIndex} 
-      RETURNING *, duration_minutes as "durationMinutes", folder_id as "folderId", is_published as "isPublished", negative_marking as "negativeMarking", created_by as "createdBy", created_at as "createdAt", updated_at as "updatedAt"
+      RETURNING *, duration_minutes as "durationMinutes", folder_id as "folderId", is_published as "isPublished", negative_marking as "negativeMarking", created_by as "createdBy", created_at as "createdAt", updated_at as "updatedAt", max_attempts as "maxAttempts"
     `;
 
     const res = await query(queryText, values);

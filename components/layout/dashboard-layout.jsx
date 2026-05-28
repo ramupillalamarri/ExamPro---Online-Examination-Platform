@@ -46,12 +46,13 @@ import {
   Search,
   Check,
   Users,
-  Home
+  Home,
+  User
 } from "lucide-react"
 
 
 export function DashboardLayout({ children }) {
-  const { isHydrated, isAuthenticated, user, logout } = useExamStore()
+  const { isHydrated, isAuthenticated, user, logout, currentRole, setCurrentRole } = useExamStore()
   const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -108,26 +109,46 @@ export function DashboardLayout({ children }) {
     return null
   }
 
-  // Unified navigation for all users (both teacher and student features)
-  const unifiedNavItems = [
+  const handleSwitchRole = () => {
+    const nextRole = inferredRole === "student" ? "teacher" : "student"
+    setCurrentRole(nextRole)
+    if (nextRole === "student") {
+      router.push("/student")
+    } else {
+      router.push("/admin")
+    }
+  }
+
+  // Infer role from pathname with currentRole as fallback
+  const inferredRole = 
+    (pathname.startsWith("/admin") ? "teacher" : 
+     pathname.startsWith("/student") || pathname.startsWith("/exams") || pathname.startsWith("/attempts") || pathname.startsWith("/dashboard")
+     ? "student" : 
+     currentRole)
+
+  // Role-based navigation
+  const studentNavItems = [
     { href: "/student", label: "Home", icon: Home },
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/exams", label: "Available Exams", icon: BookOpen },
+    { href: "/student/exams", label: "Available Exams", icon: BookOpen },
     { href: "/attempts", label: "My Attempts", icon: History },
-    { href: "/create-exam", label: "Create Exam", icon: FileText },
-    { href: "/folders", label: "Folders", icon: FolderOpen },
-    { href: "/students", label: "Students", icon: Users },
   ]
 
-  const navItems = unifiedNavItems
+  const teacherNavItems = [
+    { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/admin/exams", label: "My Exams", icon: FileText },
+    { href: "/admin/folders", label: "Folders", icon: FolderOpen },
+    { href: "/admin/students", label: "Students", icon: Users },
+  ]
+
+  const navItems = inferredRole === "student" ? studentNavItems : teacherNavItems
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen overflow-hidden bg-background flex flex-col">
       {/* Mobile Header */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="lg:hidden sticky top-0 z-50 flex h-16 items-center gap-4 border-b border-border/50 bg-card/80 backdrop-blur-xl px-4"
+        className="lg:hidden sticky top-0 z-50 flex h-16 items-center gap-4 border-b border-border/50 bg-card/80 backdrop-blur-xl px-4 shrink-0"
       >
         <motion.div whileTap={{ scale: 0.9 }}>
           <Button
@@ -187,7 +208,7 @@ export function DashboardLayout({ children }) {
         </div>
       </motion.header>
 
-      <div className="flex">
+      <div className="flex flex-1 overflow-hidden h-[calc(100vh-4rem)] lg:h-screen">
         {/* Sidebar */}
         <motion.aside
           initial={false}
@@ -336,11 +357,8 @@ export function DashboardLayout({ children }) {
               </nav>
             </div>
 
-            {/* Code Entry Section */}
-            <CodeEntry />
-
-            {/* My Exams Section */}
-            <MyExams />
+            {/* Code Entry Section - only show for student role */}
+            {inferredRole === "student" && <CodeEntry />}
 
             {/* User Menu */}
             <div className="p-4 border-t border-sidebar-border relative">
@@ -373,9 +391,9 @@ export function DashboardLayout({ children }) {
                         <span className="text-xs text-sidebar-foreground/60 capitalize flex items-center gap-1">
                           <div className={cn(
                             "w-1.5 h-1.5 rounded-full",
-                            user?.role === "admin" ? "bg-warning" : "bg-success"
+                            inferredRole === "teacher" ? "bg-warning" : "bg-success"
                           )} />
-                          {user?.role || 'student'}
+                          {inferredRole ? inferredRole.charAt(0).toUpperCase() + inferredRole.slice(1) : 'Student'}
                         </span>
                       </div>
                       <Settings className="h-4 w-4 ml-auto text-sidebar-foreground/40" />
@@ -387,6 +405,19 @@ export function DashboardLayout({ children }) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-muted-foreground">
                     {user?.email || 'N/A'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-xs text-muted-foreground capitalize">
+                    Current Role: {inferredRole ? inferredRole.charAt(0).toUpperCase() + inferredRole.slice(1) : 'Not selected'}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push(inferredRole === "teacher" ? "/admin/profile" : "/student/profile")} className="text-foreground focus:text-foreground cursor-pointer font-medium">
+                    <User className="mr-2 h-4 w-4 text-primary" />
+                    Details
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSwitchRole} className="text-primary focus:text-primary">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Switch Role
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
@@ -413,7 +444,7 @@ export function DashboardLayout({ children }) {
         </AnimatePresence>
 
         {/* Main Content */}
-        <main className="flex-1 min-h-screen lg:min-h-[calc(100vh)] overflow-auto relative">
+        <main className="flex-1 h-full overflow-y-auto relative">
           {/* Gradient background */}
           <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5 pointer-events-none" />
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -476,7 +507,6 @@ export function DashboardLayout({ children }) {
           </div>
         </DialogContent>
       </Dialog>
-
 
     </div>
   )

@@ -48,7 +48,7 @@ export async function POST( req) {
 
       if (isCorrect) {
         score += (question.marks || 2);
-      } else if (answer.selected_option_id && exam.negative_marking) {
+      } else if (answer.selected_option_id !== null && answer.selected_option_id !== undefined && exam.negative_marking) {
         score -= (question.marks || 2) * parseFloat(exam.negative_marking);
       }
     }
@@ -165,12 +165,32 @@ export async function POST( req) {
       ON CONFLICT (id) DO NOTHING
     `, [feedbackId, attemptId, JSON.stringify(mistakeAnalysis), JSON.stringify(weakTopics)]);
 
+    // Fetch all updated attempts for this exam to return in response so the student's rankings sync immediately
+    const updatedAttemptsRes = await query(`
+      SELECT 
+        a.id, 
+        a.exam_id as "examId", 
+        a.user_id as "userId", 
+        a.status, 
+        a.started_at as "startedAt", 
+        a.submitted_at as "submittedAt", 
+        a.score::numeric::double precision as "score", 
+        a.total_marks as "totalMarks", 
+        a.rank, 
+        a.warnings,
+        e.title as "examTitle"
+      FROM attempts a
+      JOIN exams e ON a.exam_id = e.id
+      WHERE a.exam_id = $1
+    `, [attempt.exam_id]);
+
     return NextResponse.json({
       success: true,
       attempt: {
         ...finalAttempt,
         examTitle: exam.title
       },
+      updatedAttempts: updatedAttemptsRes.rows,
       feedback: {
         id: feedbackId,
         attemptId,

@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { useExamStore } from "@/lib/store"
@@ -36,6 +35,7 @@ import {
   Play,
   Sparkles,
   Filter,
+  LayoutDashboard
 } from "lucide-react"
 
 const fadeInUp = {
@@ -51,29 +51,21 @@ const staggerContainer = {
   },
 }
 
-export default function StudentExamsPage() {
+export default function StudentDashboardPage() {
   const router = useRouter()
-  const { user, exams, folders, attempts, getAttemptStats, currentUserCode, fetchExamsByUserCode } = useExamStore()
+  const { user, exams, folders, getAttemptStats } = useExamStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [folderFilter, setFolderFilter] = useState("all")
   const [selectedExam, setSelectedExam] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Fetch exams when currentUserCode changes
-  useEffect(() => {
-    const fetchExams = async () => {
-      setIsLoading(true)
-      if (currentUserCode) {
-        await fetchExamsByUserCode(currentUserCode)
-      }
-      setIsLoading(false)
-    }
-    fetchExams()
-  }, [currentUserCode, fetchExamsByUserCode])
 
   const publishedExams = exams.filter((e) => e.isPublished)
 
-  const filteredExams = publishedExams.filter((exam) => {
+  // Filter exams that are visible to all students (created by admin or system level accounts)
+  const publicExams = publishedExams.filter(
+    (exam) => exam.createdBy === "admin-1" || exam.createdBy === "admin"
+  )
+
+  const filteredExams = publicExams.filter((exam) => {
     const matchesSearch = exam.title
       .toLowerCase()
       .includes(searchQuery.toLowerCase())
@@ -82,7 +74,6 @@ export default function StudentExamsPage() {
     return matchesSearch && matchesFolder
   })
 
-  // Use centralized attempt stats from store
   const getAttemptStatus = (examId) => {
     const stats = getAttemptStats(examId, user?.id || 'student-1')
     return {
@@ -96,7 +87,7 @@ export default function StudentExamsPage() {
     }
   }
 
-  const handleStartExam = ( exam) => {
+  const handleStartExam = (exam) => {
     const { inProgress, canAttempt } = getAttemptStatus(exam.id)
     if (inProgress) {
       window.location.href = `/exam/${exam.id}`
@@ -115,16 +106,16 @@ export default function StudentExamsPage() {
         className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
       >
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Available Exams</h1>
-            <Sparkles className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2.5 mb-1">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Dashboard</h1>
+            <LayoutDashboard className="h-5 w-5 text-primary" />
           </div>
           <p className="text-muted-foreground">
-            Browse and take exams to test your knowledge
+            Exams visible to all students. No access code required!
           </p>
         </div>
         <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 self-start md:self-auto">
-          {publishedExams.length} Exams Available
+          {publicExams.length} Public Exams
         </Badge>
       </motion.div>
 
@@ -138,7 +129,7 @@ export default function StudentExamsPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search exams..."
+            placeholder="Search dashboard exams..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary/50"
@@ -162,28 +153,12 @@ export default function StudentExamsPage() {
 
       {/* Exams Grid */}
       <AnimatePresence mode="wait">
-        {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 w-full">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse border-border/50 bg-card/50">
-                <CardHeader className="space-y-2">
-                  <div className="h-6 bg-muted rounded w-3/4" />
-                  <div className="h-4 bg-muted rounded w-1/2" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="h-4 bg-muted rounded w-full" />
-                  <div className="h-10 bg-muted rounded w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : filteredExams.length === 0 ? (
+        {filteredExams.length === 0 ? (
           <motion.div
             key="empty"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full"
           >
             <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
               <CardContent className="flex flex-col items-center justify-center py-16">
@@ -195,11 +170,11 @@ export default function StudentExamsPage() {
                   <BookOpen className="h-10 w-10 text-muted-foreground" />
                 </motion.div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  {publishedExams.length === 0 ? "No exams available" : "No exams found"}
+                  {publicExams.length === 0 ? "No public exams available" : "No exams found"}
                 </h3>
                 <p className="text-muted-foreground text-center max-w-sm">
-                  {publishedExams.length === 0
-                    ? "Check back later for new exams."
+                  {publicExams.length === 0
+                    ? "Check back later for new public exams."
                     : "Try adjusting your search or filters."}
                 </p>
               </CardContent>
@@ -214,9 +189,9 @@ export default function StudentExamsPage() {
             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
             {filteredExams.map((exam) => {
-              const stats = getAttemptStats(exam.id, user?.id || 'student-1')
-              const inProgress = stats.inProgress > 0
-              const attemptCount = stats.completed
+              const stats = getAttemptStatus(exam.id)
+              const inProgress = stats.inProgress
+              const attemptCount = stats.attemptCount
               const bestScore = stats.bestScore
               const canAttempt = stats.canAttempt
 
@@ -306,24 +281,24 @@ export default function StudentExamsPage() {
                             onClick={() => handleStartExam(exam)}
                             disabled={!canAttempt && !inProgress}
                           >
-                                          {inProgress ? (
-                                            <>
-                                              <Play className="mr-2 h-4 w-4" />
-                                              Resume Exam
-                                            </>
-                                          ) : !canAttempt ? (
-                                            <>No attempts left</>
-                                          ) : attemptCount > 0 ? (
-                                            <>
-                                              <Play className="mr-2 h-4 w-4" />
-                                              Retake Exam
-                                            </>
-                                          ) : (
-                                            <>
-                                              <Play className="mr-2 h-4 w-4" />
-                                              Start Exam
-                                            </>
-                                          )}
+                            {inProgress ? (
+                              <>
+                                <Play className="mr-2 h-4 w-4" />
+                                Resume Exam
+                              </>
+                            ) : !canAttempt ? (
+                              <>No attempts left</>
+                            ) : attemptCount > 0 ? (
+                              <>
+                                <Play className="mr-2 h-4 w-4" />
+                                Retake Exam
+                              </>
+                            ) : (
+                              <>
+                                <Play className="mr-2 h-4 w-4" />
+                                Start Exam
+                              </>
+                            )}
                           </Button>
                         </motion.div>
                       </div>
@@ -331,7 +306,7 @@ export default function StudentExamsPage() {
                   </Card>
                 </motion.div>
               )
-              })}
+            })}
           </motion.div>
         )}
       </AnimatePresence>
@@ -375,7 +350,7 @@ export default function StudentExamsPage() {
                 <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
                   <p className="font-medium text-foreground mb-2">Important:</p>
                   <ul className="list-disc list-inside space-y-1.5 text-sm text-muted-foreground">
-                    <li>Your answers are auto-saved progress</li>
+                    <li>Your answers are auto-saved</li>
                     <li>Switching tabs will trigger a warning</li>
                     <li>You cannot pause the timer once started</li>
                   </ul>
@@ -395,6 +370,3 @@ export default function StudentExamsPage() {
     </div>
   )
 }
-
-
-
