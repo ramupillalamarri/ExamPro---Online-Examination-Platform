@@ -36,6 +36,7 @@ import {
   Play,
   Sparkles,
   Filter,
+  Home,
 } from "lucide-react"
 
 const fadeInUp = {
@@ -53,7 +54,7 @@ const staggerContainer = {
 
 export default function StudentExamsPage() {
   const router = useRouter()
-  const { user, exams, folders, attempts, getAttemptStats, currentUserCode, fetchExamsByUserCode } = useExamStore()
+  const { user, exams, folders, attempts, getAttemptStats, currentUserCode, fetchExamsByUserCode, setCurrentUserCode } = useExamStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [folderFilter, setFolderFilter] = useState("all")
   const [selectedExam, setSelectedExam] = useState(null)
@@ -123,9 +124,23 @@ export default function StudentExamsPage() {
             Browse and take exams to test your knowledge
           </p>
         </div>
-        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 self-start md:self-auto">
-          {publishedExams.length} Exams Available
-        </Badge>
+        <div className="flex items-center gap-3 self-start md:self-auto">
+          {currentUserCode !== '455770' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentUserCode('455770')}
+              className="bg-primary/5 text-primary border-primary/20 hover:bg-primary/10 flex items-center gap-2 font-bold rounded-xl h-9"
+              title="Return to default teacher exams"
+            >
+              <Home className="h-4 w-4" />
+              Default Exams
+            </Button>
+          )}
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 h-9 px-3 flex items-center">
+            {publishedExams.length} Exams Available
+          </Badge>
+        </div>
       </motion.div>
 
       {/* Filters */}

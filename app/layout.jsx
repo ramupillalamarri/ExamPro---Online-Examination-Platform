@@ -1,14 +1,7 @@
-import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { TouristGuide } from '@/components/tourist-guide'
 import './globals.css'
-
-const inter = Inter({ 
-  subsets: ["latin"], 
-  variable: '--font-inter',
-  display: 'swap',
-});
 
 export const metadata = {
   title: 'ExamPro - Online Examination Platform',
@@ -26,7 +19,7 @@ export default function RootLayout({
   children,
 }) {
   return (
-    <html lang="en" className={`${inter.variable} bg-background`} data-scroll-behavior="smooth">
+    <html lang="en" className="bg-background" data-scroll-behavior="smooth">
       <body className="font-sans antialiased min-h-screen">
         {children}
         <Toaster 

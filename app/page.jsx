@@ -167,13 +167,13 @@ export default function LandingPage() {
           >
             <motion.div
               className="flex items-center gap-3"
-              whileHover={{ scale: 1.02 }}
-              transition={{ type: "spring", stiffness: 400 }}
+              whileHover={{ scale: 1.09 }}
+              transition={{ type: "spring", stiffness: 400}}
             >
               <motion.div
                 className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-glow-1 flex items-center justify-center shadow-lg shadow-primary/30"
-                animate={{ rotate: [0, 5, 0, -5, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                animate={{ rotate: [0, 8, 0, -8, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
               >
                 <GraduationCap className="h-5 w-5 text-primary-foreground" />
               </motion.div>

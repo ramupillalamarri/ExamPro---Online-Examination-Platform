@@ -13,9 +13,12 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useExamStore } from "@/lib/store"
 
 export function TouristGuide() {
   const pathname = usePathname()
+  const { user } = useExamStore()
+  const prevUserRef = useRef(undefined)
   
   // Exclude guide entirely on standalone active exam testing screen to prevent distraction flags
   const isExamPage = pathname?.startsWith("/exam/") && !pathname?.includes("/review") && !pathname?.includes("/result")
@@ -298,20 +301,38 @@ export function TouristGuide() {
     }
   }
 
-  // Return null on active exam page early
-  if (isExamPage) return null
+  // Track session changes to delete conversation on logout and start fresh on login/account-switch
+  useEffect(() => {
+    // Avoid resetting conversation state on first page render / mount
+    if (prevUserRef.current === undefined) {
+      prevUserRef.current = user
+      return
+    }
+
+    const prevId = prevUserRef.current?.id
+    const currentId = user?.id
+
+    if (prevId !== currentId) {
+      // Clear Sparky's conversation logs on session transitions (login/logout/switch)
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("sparky_chat_messages")
+      }
+      setMessages([
+        {
+          id: "welcome",
+          role: "assistant",
+          content: `Hello there, adventurer! 🌟 I'm **Sparky**, your ExamPro Tourist Guide! 🤖🎒\n\nI act as your local navigator here! I can help you understand how this platform works, find specific pages, or clear up any doubts. Try asking me something or click a quick suggestion below!`
+        }
+      ])
+    }
+    prevUserRef.current = user
+  }, [user])
 
   // Load saved configurations from localStorage on mount (hydration safety check)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedMessages = localStorage.getItem("sparky_chat_messages")
-      if (savedMessages) {
-        try {
-          setMessages(JSON.parse(savedMessages))
-        } catch (e) {
-          console.error(e)
-        }
-      }
+      // Clear Sparky's conversation logs every time the user opens or refreshes the website
+      localStorage.removeItem("sparky_chat_messages")
 
       const savedBtnPos = localStorage.getItem("sparky_button_position")
       if (savedBtnPos) {
@@ -516,6 +537,9 @@ export function TouristGuide() {
       )
     })
   }
+
+  // Return null on active exam page early
+  if (isExamPage) return null
 
   return (
     <>
