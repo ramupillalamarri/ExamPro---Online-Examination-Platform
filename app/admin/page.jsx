@@ -75,12 +75,14 @@ const scaleIn = {
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const { exams, attempts, folders, user, questions, answers, fetchData } = useExamStore()
+  const { exams, attempts, folders, user, questions, answers, fetchData, isHydrated } = useExamStore()
   const [selectedExamAttempts, setSelectedExamAttempts] = useState(null)
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (isHydrated && user) {
+      fetchData()
+    }
+  }, [isHydrated, user?.id, fetchData])
 
   const publishedExams = exams.filter((e) => e.isPublished)
   const totalAttempts = attempts.length

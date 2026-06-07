@@ -35,12 +35,14 @@ import {
 export default function ExamAnalysisPage({ params }) {
   const { id } = use(params)
   const router = useRouter()
-  const { exams, attempts, questions, answers, fetchData } = useExamStore()
+  const { exams, attempts, questions, answers, fetchData, user, isHydrated } = useExamStore()
   const [rosterSearch, setRosterSearch] = useState("")
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (isHydrated && user) {
+      fetchData()
+    }
+  }, [isHydrated, user?.id, fetchData])
 
   const exam = exams.find((e) => e.id === id)
 

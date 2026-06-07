@@ -37,6 +37,7 @@ export default function EditExamPage({
     durationMinutes: 60,
     folderId: "",
     negativeMarking: 0,
+    maxAttempts: 1,
     isPublished: false,
   })
 
@@ -48,6 +49,7 @@ export default function EditExamPage({
         durationMinutes: exam.durationMinutes,
         folderId: exam.folderId || "",
         negativeMarking: exam.negativeMarking,
+        maxAttempts: exam.maxAttempts || 1,
         isPublished: exam.isPublished,
       })
     }
@@ -98,6 +100,7 @@ export default function EditExamPage({
       folderId: formData.folderId || undefined,
       folderName: folder?.name,
       negativeMarking: formData.negativeMarking,
+      maxAttempts: formData.maxAttempts,
       isPublished: formData.isPublished,
     })
 
@@ -196,6 +199,27 @@ export default function EditExamPage({
               />
               <p className="text-xs text-muted-foreground">
                 How long students have to complete the exam
+              </p>
+            </div>
+
+            {/* Max Attempts */}
+            <div className="space-y-2">
+              <Label htmlFor="maxAttempts">Maximum Attempts *</Label>
+              <Input
+                id="maxAttempts"
+                type="number"
+                min={1}
+                max={100}
+                value={formData.maxAttempts}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    maxAttempts: parseInt(e.target.value) || 1,
+                  })
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                How many times students are allowed to attempt this exam
               </p>
             </div>
 

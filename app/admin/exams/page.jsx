@@ -69,7 +69,7 @@ import { toast } from "sonner"
 
 export default function ExamsPage() {
   const router = useRouter()
-  const { exams, folders, attempts, questions, answers, publishExam, deleteExam, setExams, setQuestions, fetchData } = useExamStore()
+  const { exams, folders, attempts, questions, answers, publishExam, deleteExam, setExams, setQuestions, fetchData, user, isHydrated } = useExamStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [folderFilter, setFolderFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -79,7 +79,9 @@ export default function ExamsPage() {
   const [selectedExamAttempts, setSelectedExamAttempts] = useState(null)
 
   useEffect(() => {
-    fetchData()
+    if (isHydrated && user) {
+      fetchData()
+    }
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search)
       const folderId = params.get("folderId")
@@ -87,7 +89,7 @@ export default function ExamsPage() {
         setFolderFilter(folderId)
       }
     }
-  }, [fetchData])
+  }, [isHydrated, user?.id, fetchData])
 
   const filteredExams = exams.filter((exam) => {
     const matchesSearch = exam.title
@@ -121,7 +123,7 @@ export default function ExamsPage() {
   const handleClearAllExams = async () => {
     setIsClearing(true)
     try {
-      const res = await fetch('/api/exams/clear', { method: 'DELETE' })
+      const res = await fetch(`/api/exams/clear?userId=${user?.id}`, { method: 'DELETE' })
       if (res.ok) {
         const data = await res.json()
         
@@ -309,12 +311,18 @@ export default function ExamsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => router.push(`/admin/exams/${exam.id}`)}>
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/admin/exams/${exam.id}`)
+                        }}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit Details
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleTogglePublish(exam)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleTogglePublish(exam)
+                          }}
                         >
                           {exam.isPublished ? (
                             <>
@@ -331,7 +339,10 @@ export default function ExamsPage() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
-                          onClick={() => setDeleteTarget(exam)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setDeleteTarget(exam)
+                          }}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete

@@ -1,33 +1,67 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, ensureTeacherTables, getExamById } from '@/lib/db';
 
-export async function GET( req) {
+export const dynamic = 'force-dynamic';
+
+export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
+    const userCode = searchParams.get('userCode');
+    const examId = searchParams.get('examId');
 
     let isTeacher = false;
+    let teacherUserCode = '';
     if (userId) {
-      const userRes = await query('SELECT role FROM users WHERE id = $1', [userId]);
-      if (userRes.rowCount > 0 && (userRes.rows[0].role === 'teacher' || userRes.rows[0].role === 'admin')) {
-        isTeacher = true;
+      const userRes = await query('SELECT role, user_code FROM users WHERE id = $1', [userId]);
+      if (userRes.rowCount > 0) {
+        const user = userRes.rows[0];
+        if (user.role === 'teacher' || user.role === 'admin') {
+          isTeacher = true;
+          teacherUserCode = user.user_code;
+        }
       }
     }
 
+    let activeCode = '';
+    if (isTeacher) {
+      activeCode = teacherUserCode;
+    } else if (userCode) {
+      activeCode = userCode;
+    } else if (examId) {
+      const examInfo = await getExamById(examId);
+      if (examInfo) {
+        activeCode = examInfo.userCode;
+      }
+    }
+
+    if (!activeCode) {
+      activeCode = '455770';
+    }
+
+    const safeCode = activeCode.replace(/[^a-zA-Z0-9_]/g, '');
+    await ensureTeacherTables(activeCode);
+
     // 1. Fetch Folders
-    const foldersRes = await query(`
+    let foldersQuery = `
       SELECT f.*, COALESCE(e.exam_count, 0)::integer as "examCount" 
-      FROM folders f 
+      FROM folders_${safeCode} f 
       LEFT JOIN (
         SELECT folder_id, COUNT(*) as exam_count
-        FROM exams 
+        FROM exams_${safeCode}
+    `;
+    if (!isTeacher) {
+      foldersQuery += ' WHERE is_published = true ';
+    }
+    foldersQuery += `
         GROUP BY folder_id
       ) e ON f.id = e.folder_id
       ORDER BY f.created_at DESC
-    `);
+    `;
+    const foldersRes = await query(foldersQuery);
 
     // 2. Fetch Exams
-    const examsRes = await query(`
+    let examsQuery = `
       SELECT 
         e.id, 
         e.title, 
@@ -43,8 +77,8 @@ export async function GET( req) {
         f.name as "folderName",
         COALESCE(q.q_count, 0)::integer as "questionCount",
         COALESCE(a.a_count, 0)::integer as "attemptCount"
-      FROM exams e
-      LEFT JOIN folders f ON e.folder_id = f.id
+      FROM exams_${safeCode} e
+      LEFT JOIN folders_${safeCode} f ON e.folder_id = f.id
       LEFT JOIN (
         SELECT exam_id, COUNT(*) as q_count
         FROM questions 
@@ -55,25 +89,35 @@ export async function GET( req) {
         FROM attempts 
         GROUP BY exam_id
       ) a ON e.id = a.exam_id
-      ORDER BY e.created_at DESC
-    `);
+    `;
+    if (!isTeacher) {
+      examsQuery += ' WHERE e.is_published = true ';
+    }
+    examsQuery += ' ORDER BY e.created_at DESC';
+    const examsRes = await query(examsQuery);
 
     // 3. Fetch Questions
-    const questionsRes = await query(`
+    let questionsQuery = `
       SELECT 
-        id, 
-        exam_id as "examId", 
-        question_text as "questionText", 
-        options, 
-        correct_option_id as "correctOptionId", 
-        subject, 
-        topic, 
-        marks, 
-        order_index as "orderIndex", 
-        created_at as "createdAt"
-      FROM questions
-      ORDER BY order_index ASC, created_at ASC
-    `);
+        q.id, 
+        q.exam_id as "examId", 
+        q.question_text as "questionText", 
+        q.options, 
+        q.correct_option_id as "correctOptionId", 
+        q.subject, 
+        q.topic, 
+        q.marks, 
+        q.negative_marking::numeric::double precision as "negativeMarking",
+        q.order_index as "orderIndex", 
+        q.created_at as "createdAt"
+      FROM questions q
+      JOIN exams_${safeCode} e ON q.exam_id = e.id
+    `;
+    if (!isTeacher) {
+      questionsQuery += ' WHERE e.is_published = true ';
+    }
+    questionsQuery += ' ORDER BY q.order_index ASC, q.created_at ASC';
+    const questionsRes = await query(questionsQuery);
 
     // 4. Fetch Attempts
     let attemptsQuery = `
@@ -91,15 +135,15 @@ export async function GET( req) {
         e.title as "examTitle",
         u.email as "studentEmail"
       FROM attempts a
-      JOIN exams e ON a.exam_id = e.id
+      JOIN exams_${safeCode} e ON a.exam_id = e.id
       LEFT JOIN users u ON a.user_id = u.id
     `;
     const attemptsParams = [];
-    if (userId && !isTeacher) {
-      attemptsQuery += ` WHERE a.user_id = $1`;
+    if (!isTeacher && userId) {
+      attemptsQuery += ' WHERE a.user_id = $1 ';
       attemptsParams.push(userId);
     }
-    attemptsQuery += ` ORDER BY a.started_at DESC`;
+    attemptsQuery += ' ORDER BY a.started_at DESC';
     const attemptsRes = await query(attemptsQuery, attemptsParams);
 
     // 5. Fetch Answers
@@ -112,10 +156,12 @@ export async function GET( req) {
         an.is_correct as "isCorrect", 
         an.updated_at as "updatedAt"
       FROM answers an
+      JOIN attempts att ON an.attempt_id = att.id
+      JOIN exams_${safeCode} e ON att.exam_id = e.id
     `;
     const answersParams = [];
-    if (userId && !isTeacher) {
-      answersQuery += ` JOIN attempts att ON an.attempt_id = att.id WHERE att.user_id = $1`;
+    if (!isTeacher && userId) {
+      answersQuery += ' WHERE att.user_id = $1 ';
       answersParams.push(userId);
     }
     const answersRes = await query(answersQuery, answersParams);
@@ -129,10 +175,12 @@ export async function GET( req) {
         f.weak_topics as "weakTopics", 
         f.created_at as "createdAt"
       FROM ai_feedback f
+      JOIN attempts att ON f.attempt_id = att.id
+      JOIN exams_${safeCode} e ON att.exam_id = e.id
     `;
     const feedbackParams = [];
-    if (userId && !isTeacher) {
-      feedbackQuery += ` JOIN attempts att ON f.attempt_id = att.id WHERE att.user_id = $1`;
+    if (!isTeacher && userId) {
+      feedbackQuery += ' WHERE att.user_id = $1 ';
       feedbackParams.push(userId);
     }
     const feedbackRes = await query(feedbackQuery, feedbackParams);

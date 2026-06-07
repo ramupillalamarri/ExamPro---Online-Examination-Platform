@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, getExamById } from '@/lib/db';
 
 export async function GET( req) {
   try {
@@ -17,10 +17,8 @@ export async function GET( req) {
         a.score::numeric::double precision as "score", 
         a.total_marks as "totalMarks", 
         a.rank, 
-        a.warnings, 
-        e.title as "examTitle"
+        a.warnings
       FROM attempts a
-      JOIN exams e ON a.exam_id = e.id
     `;
     const params = [];
     
@@ -32,7 +30,17 @@ export async function GET( req) {
     queryText += ` ORDER BY a.started_at DESC`;
     
     const res = await query(queryText, params);
-    return NextResponse.json(res.rows);
+
+    const attemptsWithTitle = [];
+    for (const row of res.rows) {
+      const examInfo = await getExamById(row.examId);
+      attemptsWithTitle.push({
+        ...row,
+        examTitle: examInfo ? examInfo.exam.title : 'Unknown Exam'
+      });
+    }
+
+    return NextResponse.json(attemptsWithTitle);
   } catch (error) {
     console.error('GET Attempts Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -62,33 +70,35 @@ export async function POST( req) {
         a.score::numeric::double precision as "score", 
         a.total_marks as "totalMarks", 
         a.rank, 
-        a.warnings, 
-        e.title as "examTitle",
-        e.duration_minutes as "durationMinutes"
+        a.warnings
       FROM attempts a
-      JOIN exams e ON a.exam_id = e.id
       WHERE a.exam_id = $1 AND a.user_id = $2 AND a.status = 'in_progress'
     `, [examId, userId]);
 
     if (checkRes.rowCount > 0) {
       const activeAttempt = checkRes.rows[0];
+      const examInfo = await getExamById(examId);
+      const durationMinutes = examInfo ? examInfo.exam.duration_minutes : 60;
+      const examTitle = examInfo ? examInfo.exam.title : 'Unknown Exam';
       const elapsedSeconds = Math.floor((Date.now() - new Date(activeAttempt.startedAt).getTime()) / 1000);
-      const totalSeconds = activeAttempt.durationMinutes * 60;
+      const totalSeconds = durationMinutes * 60;
       const timeRemainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
       
       return NextResponse.json({
         ...activeAttempt,
+        examTitle,
+        durationMinutes,
         timeRemainingSeconds
       });
     }
 
     // Fetch exam details
-    const examRes = await query('SELECT title, duration_minutes, max_attempts as "maxAttempts" FROM exams WHERE id = $1', [examId]);
-    if (examRes.rowCount === 0) {
+    const examInfo = await getExamById(examId);
+    if (!examInfo) {
       return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
     }
-    const exam = examRes.rows[0];
-    const maxAttempts = exam.maxAttempts !== null && exam.maxAttempts !== undefined ? exam.maxAttempts : 1;
+    const exam = examInfo.exam;
+    const maxAttempts = exam.max_attempts !== null && exam.max_attempts !== undefined ? exam.max_attempts : 1;
 
     // Server-side enforcement: count completed (graded) attempts for this user
     const completedRes = await query('SELECT COUNT(*)::integer as count FROM attempts WHERE exam_id = $1 AND user_id = $2 AND status = $3', [examId, userId, 'graded']);

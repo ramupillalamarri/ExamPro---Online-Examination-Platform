@@ -69,6 +69,7 @@ export default function QuestionsPage({
     subject: "",
     topic: "",
     marks: 2,
+    negativeMarking: 0,
   })
 
   const resetForm = () => {
@@ -79,6 +80,7 @@ export default function QuestionsPage({
       subject: "",
       topic: "",
       marks: 2,
+      negativeMarking: 0,
     })
     setEditingQuestion(null)
   }
@@ -97,6 +99,7 @@ export default function QuestionsPage({
       subject: question.subject || "",
       topic: question.topic || "",
       marks: question.marks,
+      negativeMarking: question.negativeMarking || 0,
     })
     setIsDialogOpen(true)
   }
@@ -128,6 +131,7 @@ export default function QuestionsPage({
         subject: formData.subject.trim() || undefined,
         topic: formData.topic.trim() || undefined,
         marks: formData.marks,
+        negativeMarking: formData.negativeMarking,
       })
       toast.success("Question updated successfully")
     } else {
@@ -139,6 +143,7 @@ export default function QuestionsPage({
         subject: formData.subject.trim() || undefined,
         topic: formData.topic.trim() || undefined,
         marks: formData.marks,
+        negativeMarking: formData.negativeMarking,
         orderIndex: questions.length,
       })
       toast.success("Question added successfully")
@@ -235,9 +240,14 @@ export default function QuestionsPage({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
                           <Badge variant="outline">Q{index + 1}</Badge>
                           <Badge variant="secondary">{question.marks} marks</Badge>
+                          {question.negativeMarking > 0 && (
+                            <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
+                              -{Math.round(question.negativeMarking * 100)}% negative
+                            </Badge>
+                          )}
                           {question.topic && (
                             <Badge variant="outline" className="text-xs">
                               {question.topic}
@@ -321,9 +331,11 @@ export default function QuestionsPage({
               <p className="text-sm text-muted-foreground">Minutes</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">
-                {exam.negativeMarking > 0
-                  ? `${exam.negativeMarking * 100}%`
+              <p className="text-2xl font-bold text-foreground truncate max-w-[130px] mx-auto">
+                {questions.some((q) => q.negativeMarking > 0)
+                  ? "Varies"
+                  : exam.negativeMarking > 0
+                  ? `${Math.round(exam.negativeMarking * 100)}%`
                   : "None"}
               </p>
               <p className="text-sm text-muted-foreground">Negative Marking</p>
@@ -393,7 +405,7 @@ export default function QuestionsPage({
             </div>
 
             {/* Metadata */}
-            <div className="grid sm:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="subject">Subject</Label>
                 <Input
@@ -427,6 +439,24 @@ export default function QuestionsPage({
                     setFormData({
                       ...formData,
                       marks: parseInt(e.target.value) || 1,
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="negativeMarking">Negative Marks Fraction</Label>
+                <Input
+                  id="negativeMarking"
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  max={1}
+                  placeholder="e.g., 0.33"
+                  value={formData.negativeMarking}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      negativeMarking: parseFloat(e.target.value) || 0,
                     })
                   }
                 />

@@ -50,7 +50,7 @@ const scaleIn = {
 
 export default function StudentDashboard() {
   const router = useRouter()
-  const { isHydrated, isAuthenticated, user, exams, attempts, answers, aiFeedback, fetchData } = useExamStore()
+  const { isHydrated, isAuthenticated, user, exams, folders, attempts, answers, aiFeedback, fetchData } = useExamStore()
 
   // Define useEffect to handle auth redirect & fetch fresh attempts/rankings
   useEffect(() => {
@@ -541,7 +541,7 @@ export default function StudentDashboard() {
                   animate="visible"
                   className="space-y-5 mt-6"
                 >
-                  {["Mathematics", "Physics", "Chemistry"].map((subject, index) => {
+                  {Array.from(new Set(folders.map((f) => f.name))).map((subject, index) => {
                     const subjectAttempts = completedAttempts.filter((a) => {
                       const exam = exams.find((e) => e.id === a.examId)
                       return exam?.folderName === subject

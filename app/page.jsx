@@ -102,47 +102,47 @@ export default function LandingPage() {
   const features = [
     {
       icon: GraduationCap,
-      title: "Smart Exam Management",
-      description: "Create, organize, and manage exams with ease. Group exams by subject using folders.",
+      title: "Isolated Teacher Workspaces",
+      description: "Teachers get a completely isolated personal dashboard. Create and manage private folders and exams secure from other users.",
       gradient: "from-primary to-glow-1",
     },
     {
       icon: Brain,
-      title: "AI-Powered Insights",
-      description: "Get personalized feedback with our AI tutor, mistake analyzer, and weak topic detector.",
+      title: "AI-Powered Tutor & Chat",
+      description: "Ask questions and chat with your custom AI tutor directly on the exam review screen to clarify concepts step-by-step.",
       gradient: "from-accent to-glow-3",
     },
     {
-      icon: BarChart3,
-      title: "Detailed Analytics",
-      description: "Track student performance with comprehensive analytics and score distributions.",
-      gradient: "from-chart-2 to-glow-4",
-    },
-    {
       icon: Shield,
-      title: "Anti-Cheat Protection",
-      description: "Built-in tab switch detection and warning system to ensure exam integrity.",
+      title: "Proctored Anti-Cheat Mode",
+      description: "Monitors window focus and tab switching. Automatically alerts the student and auto-submits on the 4th tab infraction.",
       gradient: "from-destructive to-glow-2",
     },
     {
-      icon: Clock,
-      title: "Auto-Save Progress",
-      description: "Never lose your work. Answers are automatically saved progress.",
+      icon: Target,
+      title: "Weak Topics & Mistakes Analyzer",
+      description: "Instantly grades exams and provides detailed AI analysis of incorrect answers and tailored improvement guides.",
+      gradient: "from-chart-2 to-glow-4",
+    },
+    {
+      icon: Users,
+      title: "Secure Code Sharing",
+      description: "Share exams with students securely using unique 6-digit access codes. Keep teacher materials completely separated.",
       gradient: "from-success to-glow-4",
     },
     {
       icon: CheckCircle2,
-      title: "Instant Results",
-      description: "Get immediate feedback with scores, rankings, and detailed answer reviews.",
+      title: "Auto-Save Progress & Results",
+      description: "Active answer saving protects attempts from connection drops. Instant grading with score dashboards and leaderboards.",
       gradient: "from-warning to-glow-5",
     },
   ]
 
   const stats = [
     { value: 10000, label: "Active Students", icon: Users, suffix: "+" },
-    { value: 500, label: "Exams Created", icon: BookOpen, suffix: "+" },
-    { value: 98, label: "Satisfaction Rate", icon: Star, suffix: "%" },
-    { value: 24, label: "Support Available", icon: Clock, suffix: "/7" },
+    { value: 1200, label: "Exams Conducted", icon: BookOpen, suffix: "+" },
+    { value: 99, label: "Integrity Score", icon: Shield, suffix: "%" },
+    { value: 100, label: "AI Guidance", icon: Brain, suffix: "%" },
   ]
 
   const testimonials = [
@@ -298,8 +298,8 @@ export default function LandingPage() {
                 variants={fadeInUp}
                 className="text-lg md:text-xl text-muted-foreground mb-10 text-pretty max-w-2xl mx-auto leading-relaxed"
               >
-                Create engaging exams, track student progress, and provide AI-powered
-                feedback all in one powerful platform designed for modern education.
+                Create isolated teacher workspaces, proctor exams with focus monitoring,
+                and leverage AI tutors for instant student reviews in a beautifully unified platform.
               </motion.p>
               
               {/* CTA Buttons */}
@@ -314,7 +314,7 @@ export default function LandingPage() {
                   >
                     <Button size="lg" className="w-full sm:w-auto shadow-2xl shadow-primary/30 px-8 h-14 text-lg bg-gradient-to-r from-primary via-glow-1 to-primary bg-[length:200%_auto] animate-gradient hover:opacity-90">
                       <Rocket className="mr-2 h-5 w-5" />
-                      Start Free Trial
+                      Get Started Now
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </motion.div>
@@ -323,7 +323,7 @@ export default function LandingPage() {
                   whileHover={{ scale: 1.05, y: -2 }} 
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto px-8 h-14 text-lg border-2 group">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto px-8 h-14 text-lg border-2 group" onClick={() => window.location.hash = '#features'}>
                     <motion.span
                       className="mr-2 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center"
                       animate={{ scale: [1, 1.1, 1] }}
@@ -331,7 +331,7 @@ export default function LandingPage() {
                     >
                       <Play className="h-4 w-4 text-primary ml-0.5" />
                     </motion.span>
-                    Watch Demo
+                    Explore Features
                   </Button>
                 </motion.div>
               </motion.div>
@@ -352,23 +352,23 @@ export default function LandingPage() {
                     <CardContent className="p-6">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <BookOpen className="h-5 w-5 text-primary" />
+                          <GraduationCap className="h-5 w-5 text-primary" />
                         </div>
-                        <div>
-                          <p className="font-semibold text-foreground">Mathematics Final</p>
-                          <p className="text-sm text-muted-foreground">45 questions</p>
+                        <div className="text-left">
+                          <p className="font-semibold text-foreground">Teacher Access Code</p>
+                          <p className="text-xs text-muted-foreground">Unlocks isolated classrooms</p>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <div className="h-2 bg-muted rounded-full overflow-hidden">
-                          <motion.div
-                            className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: "75%" }}
-                            transition={{ delay: 1, duration: 1.5 }}
-                          />
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <div className="flex-1 bg-muted rounded-lg px-3 py-1.5 text-sm font-mono text-left text-muted-foreground flex items-center">
+                            455770
+                          </div>
+                          <Badge className="bg-success text-success-foreground hover:bg-success border-0 flex items-center gap-1 text-[10px]">
+                            ✓ Verified
+                          </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">75% completed</p>
+                        <p className="text-xs text-left text-success font-semibold">12 Exams & 3 Folders Unlocked</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -380,13 +380,17 @@ export default function LandingPage() {
                   animate={{ y: [0, -15, 0], rotate: [-5, -3, -5] }}
                   transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
                 >
-                  <Card className="bg-card/80 backdrop-blur-xl border-border/50 shadow-xl">
-                    <CardContent className="p-4">
+                  <Card className="bg-card/85 backdrop-blur-xl border-border/50 shadow-xl">
+                    <CardContent className="p-4 text-left">
                       <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp className="h-4 w-4 text-success" />
-                        <span className="text-sm font-medium">Score Improved</span>
+                        <Brain className="h-4 w-4 text-primary" />
+                        <span className="text-xs font-semibold">AI Tutor Sidekick</span>
                       </div>
-                      <p className="text-2xl font-bold text-success">+23%</p>
+                      <div className="bg-primary/5 rounded-lg p-2.5 border border-primary/10">
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                          "Excellent! To find the derivative of <strong>x²</strong>, we apply the power rule to get <strong>2x</strong>."
+                        </p>
+                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -397,13 +401,16 @@ export default function LandingPage() {
                   animate={{ y: [0, -12, 0], rotate: [5, 3, 5] }}
                   transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
                 >
-                  <Card className="bg-card/80 backdrop-blur-xl border-border/50 shadow-xl">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Star className="h-4 w-4 text-warning" />
-                        <span className="text-sm font-medium">AI Feedback</span>
+                  <Card className="bg-card/85 backdrop-blur-xl border-border/50 shadow-xl">
+                    <CardContent className="p-4 text-left">
+                      <div className="flex items-center gap-2 mb-2 text-destructive">
+                        <Shield className="h-4 w-4 text-destructive" />
+                        <span className="text-xs font-semibold">Anti-Cheat Monitor</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">Great work on algebra!</p>
+                      <div className="bg-destructive/5 rounded-lg p-2.5 border border-destructive/10">
+                        <p className="text-xs font-bold text-destructive">⚠️ Tab switch warning (1 / 3)</p>
+                        <p className="text-[9.5px] text-muted-foreground mt-1 leading-normal">Focus loss will trigger auto-submit.</p>
+                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -416,7 +423,7 @@ export default function LandingPage() {
                 >
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20 text-success text-sm font-medium">
                     <CheckCircle2 className="h-4 w-4" />
-                    <span>Exam Submitted Successfully</span>
+                    <span>Attempt Saved & Graded Instantly</span>
                   </div>
                 </motion.div>
               </motion.div>
@@ -533,19 +540,15 @@ export default function LandingPage() {
             </motion.p>
           </motion.div>
 
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-50px" }}
-            variants={staggerContainer}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
               <motion.div
                 key={feature.title}
-                variants={fadeInUp}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
                 whileHover={{ y: -10, scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300 }}
               >
                 <Card className="bg-card/80 backdrop-blur-xl border-border/50 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 h-full group overflow-hidden relative">
                   <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
@@ -574,7 +577,7 @@ export default function LandingPage() {
                 </Card>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -616,9 +619,9 @@ export default function LandingPage() {
             <div className="hidden md:block absolute top-16 left-[20%] right-[20%] h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
             
             {[
-              { step: "01", title: "Create Account", desc: "Sign up or student in seconds", icon: Users },
-              { step: "02", title: "Set Up Exams", desc: "Create exams with questions and time limits", icon: BookOpen },
-              { step: "03", title: "Track Results", desc: "Get detailed analytics and AI insights", icon: LineChart },
+              { step: "01", title: "Access with 6-Digit Code", desc: "Unlock a teacher's isolated exams and study folders instantly.", icon: Users },
+              { step: "02", title: "Take AI-Proctored Exam", desc: "Answer questions under tab-switch monitoring and auto-save protection.", icon: BookOpen },
+              { step: "03", title: "Learn with AI Tutor", desc: "Receive immediate scores, mistake analysis, and concept chat support.", icon: LineChart },
             ].map((item, index) => (
               <motion.div
                 key={item.step}

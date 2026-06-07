@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, getExamById } from '@/lib/db';
 
 export async function POST( req) {
   try {
@@ -16,11 +16,11 @@ export async function POST( req) {
     const attempt = attemptRes.rows[0];
 
     // 2. Fetch the exam details
-    const examRes = await query('SELECT * FROM exams WHERE id = $1', [attempt.exam_id]);
-    if (examRes.rowCount === 0) {
+    const examInfo = await getExamById(attempt.exam_id);
+    if (!examInfo) {
       return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
     }
-    const exam = examRes.rows[0];
+    const exam = examInfo.exam;
 
     // 3. Fetch all questions for this exam
     const questionsRes = await query('SELECT * FROM questions WHERE exam_id = $1', [attempt.exam_id]);
@@ -48,8 +48,13 @@ export async function POST( req) {
 
       if (isCorrect) {
         score += (question.marks || 2);
-      } else if (answer.selected_option_id !== null && answer.selected_option_id !== undefined && exam.negative_marking) {
-        score -= (question.marks || 2) * parseFloat(exam.negative_marking);
+      } else if (answer.selected_option_id !== null && answer.selected_option_id !== undefined) {
+        const negMarking = question.negative_marking !== undefined && question.negative_marking !== null
+          ? parseFloat(question.negative_marking)
+          : (exam.negative_marking ? parseFloat(exam.negative_marking) : 0);
+        if (negMarking > 0) {
+          score -= (question.marks || 2) * negMarking;
+        }
       }
     }
 
@@ -177,12 +182,15 @@ export async function POST( req) {
         a.score::numeric::double precision as "score", 
         a.total_marks as "totalMarks", 
         a.rank, 
-        a.warnings,
-        e.title as "examTitle"
+        a.warnings
       FROM attempts a
-      JOIN exams e ON a.exam_id = e.id
       WHERE a.exam_id = $1
     `, [attempt.exam_id]);
+
+    const updatedAttempts = updatedAttemptsRes.rows.map(attRow => ({
+      ...attRow,
+      examTitle: exam.title
+    }));
 
     return NextResponse.json({
       success: true,
@@ -190,7 +198,7 @@ export async function POST( req) {
         ...finalAttempt,
         examTitle: exam.title
       },
-      updatedAttempts: updatedAttemptsRes.rows,
+      updatedAttempts,
       feedback: {
         id: feedbackId,
         attemptId,

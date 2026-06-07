@@ -81,7 +81,7 @@ export default function ExamPage({ params }) {
     const loadData = async () => {
       if (isAuthenticated && user?.id) {
         try {
-          const res = await fetch(`/api/data?userId=${encodeURIComponent(user.id)}`)
+          const res = await fetch(`/api/data?userId=${encodeURIComponent(user.id)}&examId=${encodeURIComponent(id)}`)
           if (res.ok) {
             const data = await res.json()
             if (data.exams || data.questions) {
@@ -100,7 +100,7 @@ export default function ExamPage({ params }) {
     if (questions.length === 0 && isAuthenticated) {
       loadData()
     }
-  }, [user?.id, isAuthenticated, questions.length])
+  }, [user?.id, isAuthenticated, questions.length, id])
 
   // Timer logic
   useEffect(() => {
@@ -300,7 +300,9 @@ export default function ExamPage({ params }) {
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground flex items-center gap-1.5"><Info className="h-4 w-4 text-warning" /> Penalty:</span>
                 <span className="font-semibold text-foreground">
-                  {exam.negativeMarking ? `${exam.negativeMarking} Marks per wrong answer` : 'No negative marking'}
+                  {questions.some((q) => q.negativeMarking > 0)
+                    ? 'Varies per question (GATE style)'
+                    : (exam.negativeMarking ? `${Math.round(exam.negativeMarking * 100)}% of question marks` : 'No negative marking')}
                 </span>
               </div>
             </div>
@@ -458,6 +460,11 @@ export default function ExamPage({ params }) {
                 <div className="flex flex-wrap items-center gap-1.5 mb-2">
                   <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary text-xs">Q{currentQuestionIndex + 1}</Badge>
                   <Badge variant="secondary" className="text-xs">{currentQuestion.marks} marks</Badge>
+                  {currentQuestion.negativeMarking > 0 && (
+                    <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] py-0">
+                      -{Math.round(currentQuestion.negativeMarking * 100)}% negative
+                    </Badge>
+                  )}
                   {currentQuestion.topic && (
                     <Badge variant="outline" className="text-[10px]">
                       {currentQuestion.topic}

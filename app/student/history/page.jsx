@@ -126,12 +126,14 @@ const WarningsCell = ({ warnings }) => {
 
 export default function StudentHistoryPage() {
   const router = useRouter()
-  const { user, attempts, exams, fetchData } = useExamStore()
+  const { user, attempts, exams, fetchData, isHydrated } = useExamStore()
   const [statusFilter, setStatusFilter] = useState("all")
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (isHydrated && user) {
+      fetchData()
+    }
+  }, [isHydrated, user?.id, fetchData])
   const [searchTerm, setSearchTerm] = useState("")
 
   const userAttempts = attempts

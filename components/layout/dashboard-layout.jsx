@@ -47,7 +47,8 @@ import {
   Check,
   Users,
   Home,
-  User
+  User,
+  HelpCircle
 } from "lucide-react"
 
 
@@ -130,7 +131,9 @@ export function DashboardLayout({ children }) {
   const studentNavItems = [
     { href: "/student", label: "Home", icon: Home },
     { href: "/student/exams", label: "Available Exams", icon: BookOpen },
+    { href: "/student/folders", label: "Folders", icon: FolderOpen },
     { href: "/attempts", label: "My Attempts", icon: History },
+    { href: "/student/usermanual", label: "User Manual", icon: HelpCircle },
   ]
 
   const teacherNavItems = [
@@ -138,6 +141,7 @@ export function DashboardLayout({ children }) {
     { href: "/admin/exams", label: "My Exams", icon: FileText },
     { href: "/admin/folders", label: "Folders", icon: FolderOpen },
     { href: "/admin/students", label: "Students", icon: Users },
+    { href: "/admin/usermanual", label: "User Manual", icon: HelpCircle },
   ]
 
   const navItems = inferredRole === "student" ? studentNavItems : teacherNavItems

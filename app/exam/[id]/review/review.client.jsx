@@ -130,7 +130,7 @@ export default function ReviewClient({ examId }) {
           setLoading(false)
           return
         }
-        const res = await fetch(`/api/data?userId=${encodeURIComponent(userId)}`)
+        const res = await fetch(`/api/data?userId=${encodeURIComponent(userId)}&examId=${encodeURIComponent(examId)}`)
         
         if (!res.ok) {
           throw new Error(`Failed to load review data: ${res.statusText}`)
@@ -333,6 +333,11 @@ export default function ReviewClient({ examId }) {
             <span className="bg-slate-100 text-slate-600 border border-slate-200/80 px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wide">
               {currentQuestion.marks || 2} marks
             </span>
+            {currentQuestion.negativeMarking > 0 && (
+              <span className="bg-red-50 text-red-700 border border-red-100 px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wide">
+                -{Math.round(currentQuestion.negativeMarking * 100)}% negative
+              </span>
+            )}
             {currentQuestion.topic && (
               <span className="bg-slate-100 text-slate-600 border border-slate-200/80 px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wide">
                 {currentQuestion.topic}

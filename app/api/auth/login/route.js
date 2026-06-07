@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, ensureTeacherTables } from '@/lib/db';
 
 function generateUserCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -33,7 +33,11 @@ export async function POST(req) {
                created_at as "createdAt" 
         FROM users WHERE email = $1
       `, [email]);
-      return NextResponse.json(updatedUser.rows[0]);
+      const loggedUser = updatedUser.rows[0];
+      if (loggedUser && (loggedUser.role === 'admin' || loggedUser.role === 'teacher') && loggedUser.userCode) {
+        await ensureTeacherTables(loggedUser.userCode);
+      }
+      return NextResponse.json(loggedUser);
     }
 
     // User does not exist yet — generate a globally unique 6-digit code and insert
@@ -69,6 +73,10 @@ export async function POST(req) {
 
     if (!insertedUser) {
       return NextResponse.json({ error: 'Failed to create user after multiple attempts' }, { status: 500 });
+    }
+
+    if ((insertedUser.role === 'admin' || insertedUser.role === 'teacher') && insertedUser.userCode) {
+      await ensureTeacherTables(insertedUser.userCode);
     }
 
     return NextResponse.json(insertedUser);

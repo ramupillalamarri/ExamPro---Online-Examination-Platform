@@ -53,7 +53,7 @@ const staggerContainer = {
 
 export default function StudentDashboardPage() {
   const router = useRouter()
-  const { user, exams, folders, getAttemptStats } = useExamStore()
+  const { user, exams, folders, attempts, getAttemptStats } = useExamStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [folderFilter, setFolderFilter] = useState("all")
   const [selectedExam, setSelectedExam] = useState(null)
@@ -202,7 +202,18 @@ export default function StudentDashboardPage() {
                   whileHover={{ y: -6, scale: 1.01 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
-                  <Card className="flex flex-col h-full border-border/50 bg-card/80 backdrop-blur-sm hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30 transition-all duration-300">
+                  <Card 
+                    onClick={() => {
+                      if (attemptCount > 0) {
+                        const completedAttempts = attempts.filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
+                        if (completedAttempts.length > 0) {
+                          completedAttempts.sort((a, b) => new Date(b.submittedAt || b.startedAt) - new Date(a.submittedAt || a.startedAt));
+                          router.push(`/exam/${exam.id}/review?attempt=${completedAttempts[0].id}`);
+                        }
+                      }
+                    }}
+                    className={`flex flex-col h-full border-border/50 bg-card/80 backdrop-blur-sm hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30 transition-all duration-300 ${attemptCount > 0 ? "cursor-pointer" : ""}`}
+                  >
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between gap-2">
                         <motion.div
@@ -222,10 +233,18 @@ export default function StudentDashboardPage() {
                         {!inProgress && attemptCount > 0 && (
                           <Badge
                             variant="outline"
-                            className="bg-success/10 text-success border-success/20"
+                            className="bg-success/10 text-success border-success/20 cursor-pointer hover:bg-success/20"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const completedAttempts = attempts.filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
+                              if (completedAttempts.length > 0) {
+                                completedAttempts.sort((a, b) => new Date(b.submittedAt || b.startedAt) - new Date(a.submittedAt || a.startedAt));
+                                router.push(`/exam/${exam.id}/review?attempt=${completedAttempts[0].id}`);
+                              }
+                            }}
                           >
                             <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Completed
+                            Completed (Review)
                           </Badge>
                         )}
                       </div>
@@ -267,7 +286,7 @@ export default function StudentDashboardPage() {
                       {exam.negativeMarking > 0 && (
                         <div className="flex items-center gap-2 text-xs text-warning bg-warning/10 px-3 py-2 rounded-lg mb-4">
                           <AlertTriangle className="h-3.5 w-3.5" />
-                          Negative marking: {exam.negativeMarking * 100}%
+                          Negative marking: {Math.round(exam.negativeMarking * 100)}%
                         </div>
                       )}
 
@@ -278,8 +297,19 @@ export default function StudentDashboardPage() {
                         >
                           <Button
                             className="w-full shadow-md shadow-primary/20"
-                            onClick={() => handleStartExam(exam)}
-                            disabled={!canAttempt && !inProgress}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!canAttempt && attemptCount > 0) {
+                                const completedAttempts = attempts.filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
+                                if (completedAttempts.length > 0) {
+                                  completedAttempts.sort((a, b) => new Date(b.submittedAt || b.startedAt) - new Date(a.submittedAt || a.startedAt));
+                                  router.push(`/exam/${exam.id}/review?attempt=${completedAttempts[0].id}`);
+                                }
+                              } else {
+                                handleStartExam(exam);
+                              }
+                            }}
+                            disabled={!canAttempt && !inProgress && attemptCount === 0}
                           >
                             {inProgress ? (
                               <>
@@ -287,7 +317,11 @@ export default function StudentDashboardPage() {
                                 Resume Exam
                               </>
                             ) : !canAttempt ? (
-                              <>No attempts left</>
+                              attemptCount > 0 ? (
+                                <>Review Attempt</>
+                              ) : (
+                                <>No attempts left</>
+                              )
                             ) : attemptCount > 0 ? (
                               <>
                                 <Play className="mr-2 h-4 w-4" />
@@ -344,7 +378,7 @@ export default function StudentDashboardPage() {
                 {selectedExam?.negativeMarking ? (
                   <div className="flex items-center gap-2 p-3 rounded-xl bg-warning/10 text-warning">
                     <AlertTriangle className="h-5 w-5" />
-                    <span className="text-sm">Negative marking: {selectedExam.negativeMarking * 100}%</span>
+                    <span className="text-sm">Negative marking: {Math.round(selectedExam.negativeMarking * 100)}%</span>
                   </div>
                 ) : null}
                 <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">

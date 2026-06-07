@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, ensureTeacherTables } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req) {
   try {
@@ -8,6 +10,11 @@ export async function GET(req) {
 
     // If userId is provided, get users who joined this user's exams with full attempt metrics
     if (userId) {
+      const teacherRes = await query('SELECT user_code FROM users WHERE id = $1', [userId]);
+      const teacherCode = teacherRes.rows[0]?.user_code || '455770';
+      const safeCode = teacherCode.replace(/[^a-zA-Z0-9_]/g, '');
+      await ensureTeacherTables(teacherCode);
+
       // 1. Get students accessing this teacher's code, with their total attempts and average score on this teacher's exams
       const studentsRes = await query(`
         SELECT 
@@ -35,8 +42,7 @@ export async function GET(req) {
             AVG(COALESCE(a.score, 0) * 100.0 / NULLIF(a.total_marks, 0)) FILTER (WHERE a.status = 'graded') as avg_score,
             MAX(COALESCE(a.submitted_at, a.started_at)) as last_active
           FROM attempts a
-          JOIN exams e ON a.exam_id = e.id
-          WHERE e.created_by = $1
+          JOIN exams_${safeCode} e ON a.exam_id = e.id
           GROUP BY a.user_id
         ) att ON u.id = att.user_id
         WHERE ua.accessed_user_id = $1
@@ -60,20 +66,18 @@ export async function GET(req) {
           u.email as "studentEmail",
           u.full_name as "studentName"
         FROM attempts a
-        JOIN exams e ON a.exam_id = e.id
+        JOIN exams_${safeCode} e ON a.exam_id = e.id
         JOIN users u ON a.user_id = u.id
-        WHERE e.created_by = $1
         ORDER BY a.started_at DESC
-      `, [userId]);
+      `, []);
 
       // 3. Get AI insights (aggregate of weak topics across the class for exams created by this teacher)
       const weakTopicsRes = await query(`
         SELECT af.weak_topics 
         FROM ai_feedback af
         JOIN attempts a ON af.attempt_id = a.id
-        JOIN exams e ON a.exam_id = e.id
-        WHERE e.created_by = $1
-      `, [userId]);
+        JOIN exams_${safeCode} e ON a.exam_id = e.id
+      `);
       
       const topicsMap = {};
       weakTopicsRes.rows.forEach((row) => {
