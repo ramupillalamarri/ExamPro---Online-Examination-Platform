@@ -157,7 +157,7 @@ export default function StudentDashboard() {
   const quickActions = [
     { icon: Target, label: "Practice Mode", href: "/student/exams", gradient: "from-primary/20 to-glow-1/20", iconColor: "text-primary", hoverBg: "hover:from-primary/30 hover:to-glow-1/30" },
     { icon: Flame, label: "Daily Challenge", href: "/student/exams", gradient: "from-destructive/20 to-glow-3/20", iconColor: "text-destructive", hoverBg: "hover:from-destructive/30 hover:to-glow-3/30" },
-    { icon: Trophy, label: "Leaderboard", href: "/attempts", gradient: "from-warning/20 to-glow-5/20", iconColor: "text-warning", hoverBg: "hover:from-warning/30 hover:to-glow-5/30" },
+    { icon: Trophy, label: "Leaderboard", href: "/attempts?tab=leaderboard", gradient: "from-warning/20 to-glow-5/20", iconColor: "text-warning", hoverBg: "hover:from-warning/30 hover:to-glow-5/30" },
     { icon: Brain, label: "AI Tutor", href: "/student/exams", gradient: "from-accent/20 to-glow-2/20", iconColor: "text-accent", hoverBg: "hover:from-accent/30 hover:to-glow-2/30" },
   ]
 

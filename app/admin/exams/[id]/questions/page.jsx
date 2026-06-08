@@ -80,7 +80,7 @@ export default function QuestionsPage({
 
   const [formData, setFormData] = useState({
     questionText: "",
-    options: defaultOptions,
+    options: defaultOptions.map((o) => ({ ...o })),
     correctOptionId: "a",
     subject: "",
     topic: "",
@@ -110,7 +110,7 @@ export default function QuestionsPage({
     setEditingQuestion(question)
     setFormData({
       questionText: question.questionText,
-      options: question.options,
+      options: question.options.map((o) => ({ ...o })),
       correctOptionId: question.correctOptionId,
       subject: question.subject || "",
       topic: question.topic || "",

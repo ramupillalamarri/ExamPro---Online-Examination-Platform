@@ -11,9 +11,9 @@ export default function FoldersRedirect() {
   useEffect(() => {
     if (isHydrated) {
       if (user?.role === "student") {
-        router.replace("/student/folders")
+        router.replace("/student/exams")
       } else {
-        router.replace("/admin/folders")
+        router.replace("/admin/exams")
       }
     }
   }, [isHydrated, user, router])

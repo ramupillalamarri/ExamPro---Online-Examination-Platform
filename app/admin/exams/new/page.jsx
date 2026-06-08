@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useExamStore } from "@/lib/store"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,8 @@ import { toast } from "sonner"
 
 export default function NewExamPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const folderIdParam = searchParams.get("folderId")
   const { folders, addExam, user, isHydrated, isAuthenticated, fetchData } = useExamStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -41,6 +43,26 @@ export default function NewExamPage() {
     return null
   }
 
+  // Helper to get folder path string
+  const getFolderPath = (folderId, foldersList) => {
+    const path = [];
+    let current = foldersList.find(f => f.id === folderId);
+    const visited = new Set();
+    while (current && !visited.has(current.id)) {
+      visited.add(current.id);
+      path.unshift(current.name);
+      current = current.parentId ? foldersList.find(f => f.id === current.parentId) : null;
+    }
+    return path.join(" > ");
+  };
+
+  const folderOptions = (folders || [])
+    .map(folder => ({
+      id: folder.id,
+      path: getFolderPath(folder.id, folders)
+    }))
+    .sort((a, b) => a.path.localeCompare(b.path));
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -50,6 +72,12 @@ export default function NewExamPage() {
     maxAttempts: 1,
     isPublished: false,
   })
+
+  useEffect(() => {
+    if (folderIdParam) {
+      setFormData(prev => ({ ...prev, folderId: folderIdParam }))
+    }
+  }, [folderIdParam])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -73,7 +101,7 @@ export default function NewExamPage() {
       title: formData.title.trim(),
       description: formData.description.trim() || undefined,
       durationMinutes: formData.durationMinutes,
-      folderId: formData.folderId || undefined,
+      folderId: formData.folderId && formData.folderId !== "none" ? formData.folderId : null,
       negativeMarking: formData.negativeMarking,
       maxAttempts: formData.maxAttempts,
       isPublished: formData.isPublished,
@@ -149,9 +177,9 @@ export default function NewExamPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No folder</SelectItem>
-                  {(folders || []).map((folder) => (
-                    <SelectItem key={folder.id} value={folder.id}>
-                      {folder.name}
+                  {folderOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.path}
                     </SelectItem>
                   ))}
                 </SelectContent>

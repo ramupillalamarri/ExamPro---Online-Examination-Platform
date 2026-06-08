@@ -216,7 +216,7 @@ export default function AdminDashboard() {
       >
         {[
           { icon: FileText, label: "Manage Exams", href: "/admin/exams", color: "bg-primary/10 text-primary hover:bg-primary/20" },
-          { icon: FolderOpen, label: "Folders", href: "/admin/folders", color: "bg-accent/10 text-accent hover:bg-accent/20" },
+          { icon: FolderOpen, label: "Folders", href: "/admin/exams", color: "bg-accent/10 text-accent hover:bg-accent/20" },
           { icon: Users, label: "Students", href: "/admin/students", color: "bg-chart-3/10 text-chart-3 hover:bg-chart-3/20" },
           { icon: Sparkles, label: "AI Insights", href: "/admin/students", color: "bg-success/10 text-success hover:bg-success/20" },
         ].map((action) => (
@@ -256,7 +256,7 @@ export default function AdminDashboard() {
             transition={{ type: "spring", stiffness: 300 }}
           >
             <Card className={`border-2 ${stat.borderColor} bg-card/80 backdrop-blur-sm hover:shadow-lg transition-shadow cursor-pointer`} onClick={() => {
-              if (stat.title === "Folders") router.push('/admin/folders')
+              if (stat.title === "Folders") router.push('/admin/exams')
               else if (stat.title === "Total Exams") router.push('/admin/exams')
               else if (stat.title === "Total Attempts" || stat.title === "Avg. Score") router.push('/admin/students')
             }}>

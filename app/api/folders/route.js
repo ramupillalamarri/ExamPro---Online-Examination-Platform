@@ -48,7 +48,7 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const { id, name, createdBy } = await req.json();
+    const { id, name, createdBy, parentId } = await req.json();
     if (!name || !createdBy) {
       return NextResponse.json({ error: 'Folder name and Creator ID are required' }, { status: 400 });
     }
@@ -59,8 +59,8 @@ export async function POST(req) {
     await ensureTeacherTables(userCode);
 
     const res = await query(
-      `INSERT INTO folders_${safeCode} (id, name, created_by) VALUES ($1, $2, $3) RETURNING *`,
-      [id, name, createdBy]
+      `INSERT INTO folders_${safeCode} (id, name, created_by, parent_id) VALUES ($1, $2, $3, $4) RETURNING *`,
+      [id, name, createdBy, parentId || null]
     );
 
     const folder = res.rows[0];
@@ -107,6 +107,8 @@ export async function DELETE(req) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     const userId = searchParams.get('userId');
+    const deleteExams = searchParams.get('deleteExams') === 'true';
+
     if (!id || !userId) {
       return NextResponse.json({ error: 'Folder ID and User ID are required' }, { status: 400 });
     }
@@ -114,6 +116,39 @@ export async function DELETE(req) {
     const userRes = await query('SELECT user_code FROM users WHERE id = $1', [userId]);
     const userCode = userRes.rows[0]?.user_code || '455770';
     const safeCode = userCode.replace(/[^a-zA-Z0-9_]/g, '');
+
+    if (deleteExams) {
+      // 1. Get all recursively nested folder IDs (including the deleted folder itself)
+      const foldersRes = await query(`
+        WITH RECURSIVE subfolders AS (
+          SELECT id FROM folders_${safeCode} WHERE id = $1
+          UNION ALL
+          SELECT f.id FROM folders_${safeCode} f
+          JOIN subfolders sf ON f.parent_id = sf.id
+        )
+        SELECT id FROM subfolders
+      `, [id]);
+      
+      const folderIds = foldersRes.rows.map(row => row.id);
+
+      if (folderIds.length > 0) {
+        // 2. Get all exam IDs belonging to these folders
+        const examsRes = await query(`
+          SELECT id FROM exams_${safeCode} WHERE folder_id = ANY($1)
+        `, [folderIds]);
+        
+        const examIds = examsRes.rows.map(row => row.id);
+
+        if (examIds.length > 0) {
+          // 3. Cascade delete associated questions and attempts
+          await query('DELETE FROM questions WHERE exam_id = ANY($1)', [examIds]);
+          await query('DELETE FROM attempts WHERE exam_id = ANY($1)', [examIds]);
+          
+          // 4. Delete the exams themselves
+          await query(`DELETE FROM exams_${safeCode} WHERE folder_id = ANY($1)`, [folderIds]);
+        }
+      }
+    }
 
     await query(`DELETE FROM folders_${safeCode} WHERE id = $1`, [id]);
 

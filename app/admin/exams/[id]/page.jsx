@@ -45,13 +45,33 @@ export default function EditExamPage({
     return null
   }
 
+  // Helper to get folder path string
+  const getFolderPath = (folderId, foldersList) => {
+    const path = [];
+    let current = foldersList.find(f => f.id === folderId);
+    const visited = new Set();
+    while (current && !visited.has(current.id)) {
+      visited.add(current.id);
+      path.unshift(current.name);
+      current = current.parentId ? foldersList.find(f => f.id === current.parentId) : null;
+    }
+    return path.join(" > ");
+  };
+
+  const folderOptions = (folders || [])
+    .map(folder => ({
+      id: folder.id,
+      path: getFolderPath(folder.id, folders)
+    }))
+    .sort((a, b) => a.path.localeCompare(b.path));
+
   const exam = (exams || []).find((e) => e.id === id)
 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     durationMinutes: 60,
-    folderId: "",
+    folderId: "none",
     negativeMarking: 0,
     maxAttempts: 1,
     isPublished: false,
@@ -63,7 +83,7 @@ export default function EditExamPage({
         title: exam.title,
         description: exam.description || "",
         durationMinutes: exam.durationMinutes,
-        folderId: exam.folderId || "",
+        folderId: exam.folderId || "none",
         negativeMarking: exam.negativeMarking,
         maxAttempts: exam.maxAttempts || 1,
         isPublished: exam.isPublished,
@@ -113,7 +133,7 @@ export default function EditExamPage({
       title: formData.title.trim(),
       description: formData.description.trim() || undefined,
       durationMinutes: formData.durationMinutes,
-      folderId: formData.folderId || undefined,
+      folderId: formData.folderId && formData.folderId !== "none" ? formData.folderId : null,
       folderName: folder?.name,
       negativeMarking: formData.negativeMarking,
       maxAttempts: formData.maxAttempts,
@@ -188,9 +208,9 @@ export default function EditExamPage({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No folder</SelectItem>
-                  {(folders || []).map((folder) => (
-                    <SelectItem key={folder.id} value={folder.id}>
-                      {folder.name}
+                  {folderOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.path}
                     </SelectItem>
                   ))}
                 </SelectContent>
