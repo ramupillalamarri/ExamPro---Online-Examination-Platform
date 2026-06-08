@@ -54,12 +54,16 @@ export default function StudentDashboard() {
 
   // Define useEffect to handle auth redirect & fetch fresh attempts/rankings
   useEffect(() => {
-    if (isHydrated && !isAuthenticated) {
-      router.push("/login")
-    } else if (isHydrated && isAuthenticated) {
-      fetchData()
+    if (isHydrated) {
+      if (!isAuthenticated) {
+        router.push("/login")
+      } else if (user?.role === "teacher" || user?.role === "admin") {
+        router.push("/admin")
+      } else {
+        fetchData()
+      }
     }
-  }, [isHydrated, isAuthenticated, router, fetchData])
+  }, [isHydrated, isAuthenticated, user, router, fetchData])
 
   // Return null to prevent rendering while loading/unauthenticated
   if (!isHydrated || !isAuthenticated || !user) {
@@ -67,8 +71,8 @@ export default function StudentDashboard() {
   }
 
   // All calculations below only run if authenticated
-  const publishedExams = exams.filter((e) => e.isPublished)
-  const userAttempts = attempts.filter((a) => a.userId === user.id)
+  const publishedExams = (exams || []).filter((e) => e.isPublished)
+  const userAttempts = (attempts || []).filter((a) => a.userId === user.id)
   const completedAttempts = userAttempts.filter((a) => a.status === "graded")
 
   const averageScore =
@@ -153,7 +157,7 @@ export default function StudentDashboard() {
   const quickActions = [
     { icon: Target, label: "Practice Mode", href: "/student/exams", gradient: "from-primary/20 to-glow-1/20", iconColor: "text-primary", hoverBg: "hover:from-primary/30 hover:to-glow-1/30" },
     { icon: Flame, label: "Daily Challenge", href: "/student/exams", gradient: "from-destructive/20 to-glow-3/20", iconColor: "text-destructive", hoverBg: "hover:from-destructive/30 hover:to-glow-3/30" },
-    { icon: Trophy, label: "Leaderboard", href: "/student/history", gradient: "from-warning/20 to-glow-5/20", iconColor: "text-warning", hoverBg: "hover:from-warning/30 hover:to-glow-5/30" },
+    { icon: Trophy, label: "Leaderboard", href: "/attempts", gradient: "from-warning/20 to-glow-5/20", iconColor: "text-warning", hoverBg: "hover:from-warning/30 hover:to-glow-5/30" },
     { icon: Brain, label: "AI Tutor", href: "/student/exams", gradient: "from-accent/20 to-glow-2/20", iconColor: "text-accent", hoverBg: "hover:from-accent/30 hover:to-glow-2/30" },
   ]
 
@@ -359,7 +363,7 @@ export default function StudentDashboard() {
                   </div>
                 </div>
                 {recentAttempts.length > 0 && (
-                  <Button onClick={() => router.push("/student/history")} variant="ghost" size="sm" className="text-primary">
+                  <Button onClick={() => router.push("/attempts")} variant="ghost" size="sm" className="text-primary">
                     View All
                   </Button>
                 )}

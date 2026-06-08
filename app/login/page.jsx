@@ -126,14 +126,18 @@ export default function LoginPage() {
       const fullName = payload.name
       const avatarUrl = payload.picture
       
-      // Determine Role Routing
       const role = email === "ramupillalamarri66@gmail.com" ? "admin" : "student"
-
       await login(email, role, fullName, avatarUrl)
-      setCurrentRole("student")
-      toast.success(`Welcome ${fullName}!`)
-      
-      router.push("/student")
+
+      if (role === "admin") {
+        await setCurrentRole("teacher")
+        toast.success(`Welcome back Teacher!`)
+        router.push("/admin")
+      } else {
+        await setCurrentRole("student")
+        toast.success(`Welcome ${fullName}!`)
+        router.push("/student")
+      }
     } catch (err) {
       console.error(err)
       toast.error("Google Login failed. Please try again.")

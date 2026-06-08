@@ -15,14 +15,14 @@ export async function GET(req) {
       const safeCode = teacherCode.replace(/[^a-zA-Z0-9_]/g, '');
       await ensureTeacherTables(teacherCode);
 
-      // 1. Get students accessing this teacher's code, with their total attempts and average score on this teacher's exams
+      // 1. Get students accessing this teacher's code (or who have attempted this teacher's exams), with their attempt metrics
       const studentsRes = await query(`
         SELECT 
           u.id, 
           u.email, 
           u.full_name as "fullName", 
           u.avatar_url as "avatarUrl", 
-          ua.created_at as "createdAt",
+          COALESCE(ua.created_at, att.first_attempt_at, u.created_at) as "createdAt",
           u.age,
           u.phone_number as "phoneNumber",
           u.address,
@@ -33,20 +33,21 @@ export async function GET(req) {
           COALESCE(att.attempt_count, 0)::integer as "attemptCount",
           COALESCE(att.avg_score, 0)::numeric::double precision as "avgScore",
           att.last_active as "lastActive"
-        FROM user_access ua
-        JOIN users u ON ua.user_id = u.id
+        FROM users u
+        LEFT JOIN user_access ua ON u.id = ua.user_id AND ua.accessed_user_id = $1
         LEFT JOIN (
           SELECT 
             a.user_id, 
             COUNT(*) as attempt_count,
             AVG(COALESCE(a.score, 0) * 100.0 / NULLIF(a.total_marks, 0)) FILTER (WHERE a.status = 'graded') as avg_score,
-            MAX(COALESCE(a.submitted_at, a.started_at)) as last_active
+            MAX(COALESCE(a.submitted_at, a.started_at)) as last_active,
+            MIN(a.started_at) as first_attempt_at
           FROM attempts a
           JOIN exams_${safeCode} e ON a.exam_id = e.id
           GROUP BY a.user_id
         ) att ON u.id = att.user_id
-        WHERE ua.accessed_user_id = $1
-        ORDER BY ua.created_at DESC
+        WHERE ua.id IS NOT NULL OR att.user_id IS NOT NULL
+        ORDER BY "createdAt" DESC
       `, [userId]);
 
       // 2. Get attempts made on exams created by this teacher

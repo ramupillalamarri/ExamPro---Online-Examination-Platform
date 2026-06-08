@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { useExamStore } from "@/lib/store"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -47,7 +48,8 @@ import {
 } from "lucide-react"
 
 export default function StudentsPage() {
-  const { exams, fetchData, user, getAccessedByUsers, isHydrated } = useExamStore()
+  const router = useRouter()
+  const { user, isHydrated, isAuthenticated } = useExamStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [students, setStudents] = useState([])
   const [attemptsData, setAttemptsData] = useState([])
@@ -55,14 +57,27 @@ export default function StudentsPage() {
   const [isClearing, setIsClearing] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState(null)
 
+  // Auth and redirection guard
+  useEffect(() => {
+    if (isHydrated) {
+      if (!isAuthenticated) {
+        router.push("/login")
+      } else if (user?.role === "student") {
+        router.push("/student")
+      }
+    }
+  }, [isHydrated, isAuthenticated, user?.role, router])
+
+  // Dynamic Students Data polling
   useEffect(() => {
     const loadStudentData = async () => {
+      if (!user?.id) return
       try {
         // Also refresh global store data to sync attempts/exams roster class-wide
-        await fetchData()
+        await useExamStore.getState().fetchData()
 
         // Fetch students who are accessing this teacher's 6-digit code
-        const res = await fetch(`/api/students?userId=${user?.id}`, { cache: 'no-store' })
+        const res = await fetch(`/api/students?userId=${user.id}&_t=${Date.now()}`, { cache: 'no-store' })
         if (!res.ok) throw new Error('Failed to fetch students data')
         const data = await res.json()
         setStudents(data.students || [])
@@ -73,14 +88,16 @@ export default function StudentsPage() {
       }
     }
 
-    if (isHydrated && user?.id) {
+    if (user?.id) {
       loadStudentData()
-      
-      // Auto-poll student performance and AI data dynamically every 5 seconds
       const pollInterval = setInterval(loadStudentData, 5000)
       return () => clearInterval(pollInterval)
     }
-  }, [isHydrated, user?.id, fetchData])
+  }, [user?.id])
+
+  if (!isHydrated || !isAuthenticated || !user) {
+    return null
+  }
 
   const studentStats = useMemo(() => {
     return students.map((student) => ({
@@ -108,6 +125,18 @@ export default function StudentsPage() {
   const classInsights = useMemo(() => {
     return aiInsightsData.slice(0, 3)
   }, [aiInsightsData])
+
+  const currentStudent = useMemo(() => {
+    if (!selectedStudent) return null
+    return studentStats.find((s) => s.id === selectedStudent.id) || selectedStudent
+  }, [selectedStudent, studentStats])
+
+  const classAvg = useMemo(() => {
+    const gradedAttempts = attemptsData.filter(a => a.status === 'graded')
+    if (gradedAttempts.length === 0) return 0
+    return gradedAttempts.reduce((sum, a) => sum + (a.score * 100 / (a.totalMarks || 1)), 0) / gradedAttempts.length
+  }, [attemptsData])
+
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 min-h-screen">
@@ -150,9 +179,7 @@ export default function StudentsPage() {
               <div className="flex justify-between items-center p-3 rounded-lg bg-success/5 border border-success/10">
                 <span className="text-sm font-medium text-muted-foreground">Class Average</span>
                 <span className="font-bold text-success text-lg">
-                  {studentStats.length > 0 
-                    ? (studentStats.reduce((sum, s) => sum + s.avgScore, 0) / studentStats.length).toFixed(1) 
-                    : 0}%
+                  {classAvg.toFixed(1)}%
                 </span>
               </div>
             </CardContent>
@@ -223,7 +250,7 @@ export default function StudentsPage() {
                           setAiInsightsData([])
                           
                           // Reload Zustand store to sync with cleared DB
-                          await fetchData()
+                          await useExamStore.getState().fetchData()
                           
                           alert('✓ Database reset successfully!\n\n' + data.message)
                         } else {
@@ -294,8 +321,8 @@ export default function StudentsPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center">
-                            <span className={`font-bold ${student.avgScore >= 70 ? 'text-success' : student.avgScore >= 50 ? 'text-warning' : 'text-destructive'}`}>
-                              {student.avgScore.toFixed(1)}%
+                            <span className={student.attempts > 0 ? `font-bold ${student.avgScore >= 70 ? 'text-success' : student.avgScore >= 50 ? 'text-warning' : 'text-destructive'}` : "text-muted-foreground font-semibold"}>
+                              {student.attempts > 0 ? `${student.avgScore.toFixed(1)}%` : "-"}
                             </span>
                           </TableCell>
                           <TableCell className="text-right text-sm text-muted-foreground">
@@ -315,13 +342,13 @@ export default function StudentsPage() {
       {/* Student Details Dialog */}
       <Dialog open={!!selectedStudent} onOpenChange={(open) => { if (!open) setSelectedStudent(null) }}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto border-border bg-card shadow-2xl rounded-2xl p-6">
-          {selectedStudent && (
+          {currentStudent && (
             <>
               <DialogHeader className="pb-4 border-b border-border/60">
                 <div className="flex flex-col sm:flex-row items-center gap-4">
                   <div className="relative shrink-0">
                     <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/10 via-indigo-500/10 to-accent/10 flex items-center justify-center text-3xl font-black text-primary border-4 border-slate-50 dark:border-slate-800 shadow-md">
-                      {(selectedStudent.fullName || selectedStudent.email).charAt(0).toUpperCase()}
+                      {(currentStudent.fullName || currentStudent.email).charAt(0).toUpperCase()}
                     </div>
                     <div className="absolute -bottom-1 -right-1 bg-primary text-white p-1.5 rounded-full shadow-md animate-pulse">
                       <Award className="h-3.5 w-3.5" />
@@ -329,12 +356,12 @@ export default function StudentsPage() {
                   </div>
                   <div className="text-center sm:text-left space-y-1">
                     <DialogTitle className="text-2xl font-black text-foreground tracking-tight leading-none">
-                      {selectedStudent.fullName || "Unnamed Student"}
+                      {currentStudent.fullName || "Unnamed Student"}
                     </DialogTitle>
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-1">
                       <span className="text-xs text-muted-foreground font-semibold flex items-center gap-1">
                         <Mail className="h-3 w-3 text-primary" />
-                        {selectedStudent.email}
+                        {currentStudent.email}
                       </span>
                       <span className="hidden sm:inline text-muted-foreground">•</span>
                       <Badge variant="secondary" className="bg-primary/10 text-primary border border-primary/20 font-bold text-[10px] py-0.5 px-2 uppercase">
@@ -362,7 +389,7 @@ export default function StudentsPage() {
                         <div className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider mb-1">Age</div>
                         <div className="text-sm font-bold text-foreground flex items-center gap-1.5">
                           <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                          {selectedStudent.age || <span className="text-muted-foreground font-semibold text-xs italic">Not provided</span>}
+                          {currentStudent.age || <span className="text-muted-foreground font-semibold text-xs italic">Not provided</span>}
                         </div>
                       </div>
 
@@ -370,7 +397,7 @@ export default function StudentsPage() {
                         <div className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider mb-1">Phone Number</div>
                         <div className="text-sm font-bold text-foreground flex items-center gap-1.5">
                           <Phone className="h-3.5 w-3.5 text-slate-400" />
-                          {selectedStudent.phoneNumber || <span className="text-muted-foreground font-semibold text-xs italic">Not provided</span>}
+                          {currentStudent.phoneNumber || <span className="text-muted-foreground font-semibold text-xs italic">Not provided</span>}
                         </div>
                       </div>
 
@@ -378,7 +405,7 @@ export default function StudentsPage() {
                         <div className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider mb-1">Residential Address</div>
                         <div className="text-sm font-bold text-foreground flex items-center gap-1.5">
                           <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                          <span className="truncate">{selectedStudent.address || <span className="text-muted-foreground font-semibold text-xs italic">Not provided</span>}</span>
+                          <span className="truncate">{currentStudent.address || <span className="text-muted-foreground font-semibold text-xs italic">Not provided</span>}</span>
                         </div>
                       </div>
                     </div>
@@ -396,7 +423,7 @@ export default function StudentsPage() {
                         <div className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider mb-1">College / School</div>
                         <div className="text-sm font-bold text-foreground flex items-center gap-1.5">
                           <School className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                          <span className="truncate">{selectedStudent.college || <span className="text-muted-foreground font-semibold text-xs italic">Not provided</span>}</span>
+                          <span className="truncate">{currentStudent.college || <span className="text-muted-foreground font-semibold text-xs italic">Not provided</span>}</span>
                         </div>
                       </div>
 
@@ -404,7 +431,7 @@ export default function StudentsPage() {
                         <div className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider mb-1">Major / Field</div>
                         <div className="text-sm font-bold text-foreground flex items-center gap-1.5">
                           <GraduationCap className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                          <span className="truncate">{selectedStudent.major || <span className="text-muted-foreground font-semibold text-xs italic">Not provided</span>}</span>
+                          <span className="truncate">{currentStudent.major || <span className="text-muted-foreground font-semibold text-xs italic">Not provided</span>}</span>
                         </div>
                       </div>
 
@@ -412,7 +439,7 @@ export default function StudentsPage() {
                         <div className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider mb-1">Graduation Year</div>
                         <div className="text-sm font-bold text-foreground flex items-center gap-1.5">
                           <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                          {selectedStudent.graduationYear || <span className="text-muted-foreground font-semibold text-xs italic">Not provided</span>}
+                          {currentStudent.graduationYear || <span className="text-muted-foreground font-semibold text-xs italic">Not provided</span>}
                         </div>
                       </div>
                     </div>
@@ -425,7 +452,7 @@ export default function StudentsPage() {
                       About Student
                     </h3>
                     <div className="p-4 rounded-xl border border-border bg-muted/30 text-xs leading-relaxed text-slate-600 dark:text-slate-300 font-semibold min-h-[80px]">
-                      {selectedStudent.bio || "No bio description provided by the student."}
+                      {currentStudent.bio || "No bio description provided by the student."}
                     </div>
                   </div>
                 </div>
@@ -441,17 +468,17 @@ export default function StudentsPage() {
                     <div className="grid grid-cols-3 gap-2.5">
                       <div className="p-3 rounded-xl border border-border bg-muted/30 text-center">
                         <div className="text-[9px] text-muted-foreground font-extrabold uppercase tracking-wider mb-0.5">Attempts</div>
-                        <div className="text-lg font-black text-foreground">{selectedStudent.attempts}</div>
+                        <div className="text-lg font-black text-foreground">{currentStudent.attempts}</div>
                       </div>
 
                       <div className="p-3 rounded-xl border border-border bg-muted/30 text-center">
                         <div className="text-[9px] text-muted-foreground font-extrabold uppercase tracking-wider mb-0.5">Average</div>
-                        <div className="text-lg font-black text-primary">{selectedStudent.avgScore.toFixed(1)}%</div>
+                        <div className="text-lg font-black text-primary">{currentStudent.avgScore.toFixed(1)}%</div>
                       </div>
 
                       <div className="p-3 rounded-xl border border-border bg-muted/30 text-center">
                         <div className="text-[9px] text-muted-foreground font-extrabold uppercase tracking-wider mb-0.5">Joined</div>
-                        <div className="text-xs font-bold text-foreground pt-1.5 truncate">{selectedStudent.joinedAt}</div>
+                        <div className="text-xs font-bold text-foreground pt-1.5 truncate">{currentStudent.joinedAt}</div>
                       </div>
                     </div>
                   </div>
@@ -465,7 +492,7 @@ export default function StudentsPage() {
 
                     <div className="flex-1 overflow-y-auto max-h-[300px] border border-border rounded-xl p-3 space-y-3 bg-muted/20 scrollbar-visible">
                       {(() => {
-                        const studentAttempts = attemptsData.filter(att => att.userId === selectedStudent.id)
+                        const studentAttempts = attemptsData.filter(att => att.userId === currentStudent.id)
                         if (studentAttempts.length === 0) {
                           return (
                             <div className="flex flex-col items-center justify-center py-12 text-center h-full">

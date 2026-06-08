@@ -69,7 +69,7 @@ import { toast } from "sonner"
 
 export default function ExamsPage() {
   const router = useRouter()
-  const { exams, folders, attempts, questions, answers, publishExam, deleteExam, setExams, setQuestions, fetchData, user, isHydrated } = useExamStore()
+  const { exams, folders, attempts, questions, answers, publishExam, deleteExam, setExams, setQuestions, fetchData, user, isHydrated, isAuthenticated } = useExamStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [folderFilter, setFolderFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -79,8 +79,14 @@ export default function ExamsPage() {
   const [selectedExamAttempts, setSelectedExamAttempts] = useState(null)
 
   useEffect(() => {
-    if (isHydrated && user) {
-      fetchData()
+    if (isHydrated) {
+      if (!isAuthenticated) {
+        router.push("/login")
+      } else if (user?.role === "student") {
+        router.push("/student")
+      } else {
+        fetchData()
+      }
     }
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search)
@@ -89,9 +95,13 @@ export default function ExamsPage() {
         setFolderFilter(folderId)
       }
     }
-  }, [isHydrated, user?.id, fetchData])
+  }, [isHydrated, isAuthenticated, user, router, fetchData])
 
-  const filteredExams = exams.filter((exam) => {
+  if (!isHydrated || !isAuthenticated || !user) {
+    return null
+  }
+
+  const filteredExams = (exams || []).filter((exam) => {
     const matchesSearch = exam.title
       .toLowerCase()
       .includes(searchQuery.toLowerCase())
@@ -191,7 +201,7 @@ export default function ExamsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Folders</SelectItem>
-            {folders.map((folder) => (
+            {(folders || []).map((folder) => (
               <SelectItem key={folder.id} value={folder.id}>
                 {folder.name}
               </SelectItem>

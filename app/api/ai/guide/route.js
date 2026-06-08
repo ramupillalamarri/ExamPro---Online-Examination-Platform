@@ -59,13 +59,17 @@ Official Guide Directory - Know every feature, button, route, and precise naviga
    - Features: sticky left navigation containing access codes and account configurations.
    - Core Sidebar Buttons:
      * IF IN STUDENT ROLE:
-       - "Exams Catalog" link: Routes to the exam portal ("/student/exams").
-       - "My Attempts" link: Routes to attempt logs ("/student/history").
+       - "Home" link: Routes to student dashboard ("/student").
+       - "Available Exams" link: Routes to the exam portal ("/student/exams").
+       - "Folders" link: Routes to subject folder groups ("/student/folders").
+       - "My Attempts" link: Routes to attempt logs ("/attempts").
+       - "User Manual" link: Routes to manual ("/student/usermanual").
      * IF IN TEACHER/ADMIN ROLE:
        - "Dashboard" link: Routes to stats summaries ("/admin").
        - "My Exams" link: Routes to catalog manager ("/admin/exams").
        - "Folders" link: Routes to subject folders manager ("/admin/folders").
        - "Students" link: Routes to student classroom rosters ("/admin/students").
+       - "User Manual" link: Routes to teacher manual ("/admin/usermanual").
      * GLOBAL SIDEBAR BOTTOM CONTROLS:
        - "User Code" input box: Students can type a teacher's 6-digit access code (default "455770") and press Enter to load that teacher's catalog.
        - User Name Card button (bottom-left): Displays active name. Click to open a dropdown popup:
@@ -77,7 +81,7 @@ Official Guide Directory - Know every feature, button, route, and precise naviga
    - Features: Quick summary metrics and welcome cards.
    - Core Buttons:
      * "Browse Available Exams" card: Routes to "/student/exams".
-     * "Review Past Attempts" card: Routes to "/student/history".
+     * "Review Past Attempts" card: Routes to "/attempts".
 
 6. EXAMS CATALOG ("/student/exams"):
    - Features: Subject categories and exam grid.
@@ -88,64 +92,76 @@ Official Guide Directory - Know every feature, button, route, and precise naviga
        - Sidenote: Locked/disabled if user has already consumed their strict single attempt!
        - Sidenote: If list is empty, type teacher code "455770" in the sidebar input box to unlock exams!
 
-7. MY ATTEMPTS HISTORY ("/student/history"):
+7. STUDENT FOLDERS GRID ("/student/folders"):
+   - Features: Dynamic colorful subject cards showing available exams count.
+   - Core Buttons:
+     * Folder card click: Redirects to "/student/exams?folderId=[id]" to view draft/published exams in that folder.
+
+8. MY ATTEMPTS HISTORY ("/attempts"):
    - Features: Scores summary metrics, attempts table, leaderboard ranks, and search bar.
+   - UI Details:
+     * Rank badge: Trophy icons indicating gold (#1), silver (#2), and bronze (#3) student ranks.
+     * Score progress: Inline horizontal progress bar reflecting score percentage.
+     * Warnings indicator: Pulsing red warning pill count highlighting proctoring tab switches.
    - Core Buttons:
      * "Search" input bar: Filters attempts by exam title.
+     * Status dropdown filter: Filters attempts by completion status (All attempts, Completed, In progress).
      * "Review Answers" button inside attempt rows: Opens the review screen ("/exam/[exam-id]/review?attempt=[attempt-id]").
-     * Leaderboard search input (inside leaderboard widget): Filters dynamic ranks by student email.
 
-8. EXAM TESTING ROOM ("/exam/[id]") - STRICT NO CHEATING MODE:
+9. EXAM TESTING ROOM ("/exam/[id]") - STRICT NO CHEATING MODE:
    - Sparky is automatically disabled here to enforce proctoring rules! If users ask about it, remind them that active testing screens block chatbot widgets to ensure zero cheating warnings.
    - Anti-cheat tracking: switching browser tabs triggers count warnings. 3 violations submits the exam automatically!
 
-9. EXAM RESULT PAGE ("/exam/[id]/result?attempt=[attempt-id]"):
-   - Features: Trophy score charts and warnings report.
-   - Core Buttons:
-     * "Review Graded Answers" button: Routes to "/exam/[exam-id]/review?attempt=[attempt-id]".
-     * "Back to Dashboard" button: Routes to "/student".
+10. EXAM RESULT PAGE ("/exam/[id]/result?attempt=[attempt-id]"):
+    - Features: Trophy score charts, mistake analysis, proctor warning logs, and topic recommendations.
+    - Core Buttons:
+      * "Review All Answers" button: Routes to "/exam/[exam-id]/review?attempt=[attempt-id]".
+      * "Take Another Exam" button: Routes to "/student/exams".
 
-10. GRADED EXAM REVIEW PAGE ("/exam/[id]/review?attempt=[attempt-id]"):
+11. GRADED EXAM REVIEW PAGE ("/exam/[id]/review?attempt=[attempt-id]"):
     - Features: comparative student answers vs correct answers list, and resizable split panels.
     - Core Buttons:
-      - "Back" button (top header): Returns teachers to "/admin/exams" and students to "/student/history".
+      - "Back" button (top header): Returns teachers to "/admin/exams" and students to "/attempts".
       - Drag handler split bar: Adjust panel dimensions. Holds the AI Tutor column on the right.
 
-11. USER DETAILS PROFILE FORM ("/student/profile" or "/admin/profile"):
-    - Features: Optional profile details editor.
+12. USER DETAILS PROFILE FORM ("/student/profile" or "/admin/profile"):
+    - Features: Profile details editor (Name, Age, Phone, Address, College, Major, Graduation Year, Bio). All are completely optional!
     - Core Buttons:
       - "Back" arrow button (top header): Returns back to "/student" or "/admin".
-      - Input fields: Name, Age, Phone, Address, College, Major, Graduation Year, Bio. All are completely optional!
-      - "Save Details" button (bottom-right): Saves information to postgres DB and triggers a toast notification.
+      - "Save Details" button (bottom-right): Saves information to database.
 
-12. TEACHER DASHBOARD HOME ("/admin"):
-    - Features: High-level classroom charts (Total exams, students, class averages).
-    - Core Buttons:
-      - Recent activity exam card rows: Click to open dynamic performance analysis ("/admin/exams/[exam-id]/analysis").
+13. TEACHER DASHBOARD HOME ("/admin"):
+    - Features: High-level analytics, Horizonal bar charts, and Student Leaderboards.
+    - Clickable Cards:
+      - "Total Attempts" and "Avg. Score" statistics cards are clickable and route directly to the students roster "/admin/students".
+    - Recent Exams Card List:
+      - Click any exam row to open dynamic performance analysis ("/admin/exams/[exam-id]/analysis").
+      - Click the **Quick Analyze** button next to Edit on cards to open the analytics details dialog modal inline on the dashboard.
 
-13. MY EXAMS MANAGER ("/admin/exams"):
+14. MY EXAMS MANAGER ("/admin/exams"):
     - Features: Exams publisher catalog.
     - Core Buttons:
       - "Create Exam" button (top-right): Opens exam configuration form.
       - "Edit" icon, "Delete" icon, and Draft/Publish switch on cards.
       - Card Click action: Clicking any exam card row opens '/admin/exams/[exam-id]/analysis'.
 
-14. FOLDERS BUILDER ("/admin/folders"):
-    - Features: Category groups builder.
+15. FOLDERS BUILDER ("/admin/folders"):
+    - Features: Animated subject folder cards with dynamic color coding.
     - Core Buttons:
-      - "Create Folder" button: Opens naming form.
-      - Folder cards: Click to redirect to '/admin/exams?folderId=[id]' to show draft and published exams in that folder.
+      - "New Folder" button (top-right): Opens naming form.
+      - Folder cards: Click to redirect to '/admin/exams?folderId=[id]' to show exams in that folder.
+      - Pencil / Trash icons: Edit or delete folders.
 
-15. CLASSROOM ROSTER & STUDENTS ("/admin/students"):
-    - Features: Real-time class grades averages, weak topics recommendations (polls every 5s), and roster list.
+16. CLASSROOM ROSTER & STUDENTS ("/admin/students"):
+    - Features: Aggregated classroom grades averages, weak topics recommendations, and student list.
     - Core Buttons:
       - "Reset Database" button: Purges all attempts, scores, and warning logs to start fresh.
       - Student name rows: Clicking a student's row opens the "Student Details Dialog" popup showing full bio, address, college, graduation year, and detailed list of exam attempts with proctor warning highlights!
 
-16. PERFORMANCE ANALYSIS ("/admin/exams/[exam-id]/analysis"):
-    - Features: Full-page statistical analytics, rank metrics, topic difficulty progress bars (Red = weak, Amber = medium, Green = mastery), proctor safety warnings, and search roster bar.
+17. PERFORMANCE ANALYSIS ("/admin/exams/[exam-id]/analysis"):
+    - Features: Full-page statistical charts, proctor safety warnings, topic difficulty progress bars, and leaderboard table.
     - Core Buttons:
-      - "Review" button in roster table: Opens "/exam/[exam-id]/review?attempt=[attempt-id]" to review that student's actual sheet full-width (AI Tutor hidden for teachers).
+      - "Review" button in roster table: Opens "/exam/[exam-id]/review?attempt=[attempt-id]" to review that student's actual sheet.
       - "Back to Catalog" button (header): Returns back to "/admin/exams".
 
 Guidelines for Sparky:
@@ -189,7 +205,7 @@ Here is what you see on this page:
 - An **About** button in the header leading to our full manual directory!
 
 **How to navigate from here:**
-- **To log in:** Click the red **Get Started** or **Login** button at the top header.
+- **To log in:** Click the **Get Started** or **Login** button at the top header.
 - **To view manual:** Click the **About** link in the top menu.`;
     } else if (currentPath === '/about') {
       replyText += `### 📖 Welcome to the Official User Manual!
@@ -224,11 +240,12 @@ On this page, you can:
 - **To start an exam:** Click **Start Exam** on any card.
 - **To unlock more exams:** Look at the left sidebar, locate the **Teacher Access Code** input field, type **455770** and press Enter.
 - **To view past scores:** Click **My Attempts** in the left sidebar.`;
-    } else if (currentPath.includes('/student/history')) {
+    } else if (currentPath.includes('/attempts')) {
       replyText += `### 📝 Welcome to your Attempt History!
 On this page, you can:
 - View a beautiful table of all your past attempts.
-- Check your final scores, percentage marks, and any cheating warnings triggered (tab switches).
+- Check your final scores, percentage marks, and any cheating warnings triggered (tab switches) highlighted in red pills.
+- See your dynamic Rank Badge trophies (#1, #2, #3) based on class leaderboards.
 - Click the **Review Answers** button to go to the graded review screen and chat with the AI Tutor!
 - Filter leaderboard ranks using the search bar inside the leaderboard card.
 
@@ -250,8 +267,11 @@ On this page, you can:
       replyText += `### 📊 Welcome to the Teacher Dashboard!
 Here is what you see on this page:
 - Administrative statistics cards showing total exams, students, average class grades, and folders count.
+  - **Sidenote:** Clicking "Total Attempts" or "Avg. Score" routes you directly to the classroom roster!
 - A list of recent exam activities and student leaderboard ranks.
-- Click any recent exam card row to open its full-performance analysis page!
+  - Click **Quick Analyze** on any recent exam row to trigger the performance analysis modal dialog inline on this page!
+  - Click **Edit** to update exam configurations.
+- Click any recent exam card row container to open its full-performance analysis page!
 
 **How to navigate from here:**
 - **To view dynamic exam charts:** Click on any exam card under the "Recent Exams" grid.
@@ -283,23 +303,20 @@ On this page, you can:
     } else if (currentPath.includes('/admin/folders')) {
       replyText += `### 📁 Welcome to the Folders Manager!
 On this page, you can:
-- Click the **Create Folder** builder button to add subject groupings.
-- View subject cards showing the number of exams inside each folder.
+- Click the **New Folder** builder button to add subject groupings.
+- View subject cards showing the number of exams inside each folder with premium color-coded icons.
 - Click a folder card to redirect to the exams page, pre-filtered for that folder!
 
 **How to navigate from here:**
-- **To create subject folder:** Click the **Create Folder** button in the top-right.
+- **To create subject folder:** Click the **New Folder** button in the top-right.
 - **To view exams inside:** Click on the folder card itself (e.g. Mathematics).`;
     } else if (currentPath.includes('/admin/students')) {
       replyText += `### 👥 Welcome to the Students Classroom Roster!
 On this page, you can:
-- View aggregated classroom performance averages (score, attempt counts, warnings count).
-- Browse the weak topic cards pointing out subjects where students struggled.
-- See the list of all students. **Sidenote:** Roster data polls automatically every 5 seconds to stay perfectly updated!
-
-**How to navigate from here:**
-- **To view student details:** Click on any student's name row. A gorgeous popup details form and attempts history will open!
-- **To wipe test data:** Click the red **Reset Database** button in the top-right corner.`;
+- View classroom statistics and average scores.
+- Check topic alerts for topics where students struggled.
+- Click any student row to open the **Student Details Dialog** popup displaying their biography, college, address, and attempt warning details!
+- Click **Reset Database** to flush proctoring attempts and warning logs.`;
     } else if (currentPath.includes('/review')) {
       replyText += `### ✨ Welcome to the Graded Exam Review!
 Here is what is visible:
@@ -343,7 +360,7 @@ Here is what is visible:
       } else {
         replyText += `### 🧭 Quick Navigation Manual:
 * **Are you a Student?** Go to **Exams Catalog** to start, and **My Attempts** to review answers and see leaderboards.
-* **Are you a Teacher?** Visit **My Exams** to create folders/exams, click them to view full-page analytics, or go to **Students** for aggregated classroom insights.
+* **Are you a Teacher?** Visit **My Exams** to create folders/exams, click them to view full-page analytics, or go to **Students** for classroom insights.
 * **To edit details:** Click your name in the bottom-left sidebar, then click **Details**!
 
 Tell me what you are looking for, and I'll route you there! 🚀`;

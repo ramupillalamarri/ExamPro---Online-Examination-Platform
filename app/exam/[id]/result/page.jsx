@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, use } from "react"
+import { useEffect, use, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useExamStore } from "@/lib/store"
@@ -43,14 +43,25 @@ export default function ResultPage({
     isHydrated,
   } = useExamStore()
 
+  const [isLoading, setIsLoading] = useState(true)
+
   useEffect(() => {
-    if (isHydrated) {
-      if (!isAuthenticated) {
-        router.push("/login")
-      } else {
-        fetchData(id)
+    const loadData = async () => {
+      if (isHydrated) {
+        if (!isAuthenticated) {
+          router.push("/login")
+        } else {
+          try {
+            await fetchData(id)
+          } catch (err) {
+            console.error('Failed to load result data:', err)
+          } finally {
+            setIsLoading(false)
+          }
+        }
       }
     }
+    loadData()
   }, [isHydrated, isAuthenticated, router, fetchData, id])
 
   const exam = exams.find((e) => e.id === id)
@@ -58,6 +69,15 @@ export default function ResultPage({
   const questions = getExamQuestions(id)
   const answers = attempt ? getAttemptAnswers(attempt.id) : []
   const feedback = aiFeedback.find((f) => f.attemptId === attemptId)
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <p className="text-muted-foreground text-sm animate-pulse font-semibold">Loading exam results...</p>
+      </div>
+    )
+  }
 
   if (!exam || !attempt) {
     return (

@@ -25,6 +25,8 @@ export default function ExamsPage() {
         router.push("/login")
       } else if (user?.role === "student") {
         router.push("/student/exams")
+      } else if (user?.role === "teacher" || user?.role === "admin") {
+        router.push("/admin/exams")
       }
     }
   }, [isHydrated, isAuthenticated, user, router])
@@ -33,17 +35,17 @@ export default function ExamsPage() {
   useEffect(() => {
     const fetchExams = async () => {
       setIsLoading(true)
-      await fetchExamsByUserCode(currentUserCode)
+      if (currentUserCode) {
+        await fetchExamsByUserCode(currentUserCode)
+      }
       setIsLoading(false)
     }
 
-    if (currentUserCode) {
-      fetchExams()
-    }
+    fetchExams()
   }, [currentUserCode, fetchExamsByUserCode])
 
   useEffect(() => {
-    const filtered = exams.filter((exam) =>
+    const filtered = (exams || []).filter((exam) =>
       exam.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exam.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exam.folderName?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -167,7 +169,7 @@ export default function ExamsPage() {
                 ? 'Try adjusting your search terms'
                 : 'No exams are available yet. Ask someone to share their code to access their exams!'}
             </p>
-            <Link href="/dashboard">
+            <Link href="/student">
               <Button variant="outline">Back to Dashboard</Button>
             </Link>
           </Card>

@@ -80,7 +80,7 @@ export default function StudentExamsPage() {
     fetchExams()
   }, [currentUserCode, fetchExamsByUserCode])
 
-  const publishedExams = exams.filter((e) => e.isPublished)
+  const publishedExams = (exams || []).filter((e) => e.isPublished)
 
   const filteredExams = publishedExams.filter((exam) => {
     const matchesSearch = exam.title
@@ -108,7 +108,7 @@ export default function StudentExamsPage() {
   const handleStartExam = ( exam) => {
     const { inProgress, canAttempt } = getAttemptStatus(exam.id)
     if (inProgress) {
-      window.location.href = `/exam/${exam.id}`
+      router.push(`/exam/${exam.id}`)
     } else if (canAttempt) {
       setSelectedExam(exam)
     }
@@ -174,7 +174,7 @@ export default function StudentExamsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Subjects</SelectItem>
-            {folders.map((folder) => (
+            {(folders || []).map((folder) => (
               <SelectItem key={folder.id} value={folder.id}>
                 {folder.name}
               </SelectItem>
@@ -253,7 +253,7 @@ export default function StudentExamsPage() {
                   <Card 
                     onClick={() => {
                       if (attemptCount > 0) {
-                        const completedAttempts = attempts.filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
+                        const completedAttempts = (attempts || []).filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
                         if (completedAttempts.length > 0) {
                           completedAttempts.sort((a, b) => new Date(b.submittedAt || b.startedAt) - new Date(a.submittedAt || a.startedAt));
                           router.push(`/exam/${exam.id}/review?attempt=${completedAttempts[0].id}`);
@@ -284,7 +284,7 @@ export default function StudentExamsPage() {
                             className="bg-success/10 text-success border-success/20 cursor-pointer hover:bg-success/20"
                             onClick={(e) => {
                               e.stopPropagation();
-                              const completedAttempts = attempts.filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
+                              const completedAttempts = (attempts || []).filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
                               if (completedAttempts.length > 0) {
                                 completedAttempts.sort((a, b) => new Date(b.submittedAt || b.startedAt) - new Date(a.submittedAt || a.startedAt));
                                 router.push(`/exam/${exam.id}/review?attempt=${completedAttempts[0].id}`);
@@ -348,7 +348,7 @@ export default function StudentExamsPage() {
                             onClick={(e) => {
                               e.stopPropagation();
                               if (!canAttempt && attemptCount > 0) {
-                                const completedAttempts = attempts.filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
+                                const completedAttempts = (attempts || []).filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
                                 if (completedAttempts.length > 0) {
                                   completedAttempts.sort((a, b) => new Date(b.submittedAt || b.startedAt) - new Date(a.submittedAt || a.startedAt));
                                   router.push(`/exam/${exam.id}/review?attempt=${completedAttempts[0].id}`);

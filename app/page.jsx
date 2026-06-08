@@ -94,7 +94,7 @@ export default function LandingPage() {
       if (user.role === 'student') {
         router.push('/student')
       } else {
-        router.push('/dashboard')
+        router.push('/admin')
       }
     }
   }, [isAuthenticated, user, router])

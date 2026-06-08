@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useExamStore } from "@/lib/store"
@@ -22,8 +22,24 @@ import { toast } from "sonner"
 
 export default function NewExamPage() {
   const router = useRouter()
-  const { folders, addExam } = useExamStore()
+  const { folders, addExam, user, isHydrated, isAuthenticated, fetchData } = useExamStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (isHydrated) {
+      if (!isAuthenticated) {
+        router.push("/login")
+      } else if (user?.role === "student") {
+        router.push("/student")
+      } else {
+        fetchData()
+      }
+    }
+  }, [isHydrated, isAuthenticated, user, router, fetchData])
+
+  if (!isHydrated || !isAuthenticated || !user) {
+    return null
+  }
 
   const [formData, setFormData] = useState({
     title: "",
@@ -133,7 +149,7 @@ export default function NewExamPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No folder</SelectItem>
-                  {folders.map((folder) => (
+                  {(folders || []).map((folder) => (
                     <SelectItem key={folder.id} value={folder.id}>
                       {folder.name}
                     </SelectItem>

@@ -26,10 +26,26 @@ export default function EditExamPage({
 
   const { id } = use(params)
   const router = useRouter()
-  const { exams, folders, updateExam } = useExamStore()
+  const { exams, folders, updateExam, user, isHydrated, isAuthenticated, fetchData } = useExamStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const exam = exams.find((e) => e.id === id)
+  useEffect(() => {
+    if (isHydrated) {
+      if (!isAuthenticated) {
+        router.push("/login")
+      } else if (user?.role === "student") {
+        router.push("/student")
+      } else {
+        fetchData()
+      }
+    }
+  }, [isHydrated, isAuthenticated, user, router, fetchData])
+
+  if (!isHydrated || !isAuthenticated || !user) {
+    return null
+  }
+
+  const exam = (exams || []).find((e) => e.id === id)
 
   const [formData, setFormData] = useState({
     title: "",
@@ -91,7 +107,7 @@ export default function EditExamPage({
     // Simulate delay
     await new Promise((resolve) => setTimeout(resolve, 500))
 
-    const folder = folders.find((f) => f.id === formData.folderId)
+    const folder = (folders || []).find((f) => f.id === formData.folderId)
 
     updateExam(id, {
       title: formData.title.trim(),
@@ -172,7 +188,7 @@ export default function EditExamPage({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No folder</SelectItem>
-                  {folders.map((folder) => (
+                  {(folders || []).map((folder) => (
                     <SelectItem key={folder.id} value={folder.id}>
                       {folder.name}
                     </SelectItem>

@@ -35,16 +35,26 @@ import {
 export default function ExamAnalysisPage({ params }) {
   const { id } = use(params)
   const router = useRouter()
-  const { exams, attempts, questions, answers, fetchData, user, isHydrated } = useExamStore()
+  const { exams, attempts, questions, answers, fetchData, user, isHydrated, isAuthenticated } = useExamStore()
   const [rosterSearch, setRosterSearch] = useState("")
 
   useEffect(() => {
-    if (isHydrated && user) {
-      fetchData()
+    if (isHydrated) {
+      if (!isAuthenticated) {
+        router.push("/login")
+      } else if (user?.role === "student") {
+        router.push("/student")
+      } else {
+        fetchData()
+      }
     }
-  }, [isHydrated, user?.id, fetchData])
+  }, [isHydrated, isAuthenticated, user, router, fetchData])
 
-  const exam = exams.find((e) => e.id === id)
+  if (!isHydrated || !isAuthenticated || !user) {
+    return null
+  }
+
+  const exam = (exams || []).find((e) => e.id === id)
 
   if (!exam) {
     return (
@@ -63,7 +73,7 @@ export default function ExamAnalysisPage({ params }) {
     )
   }
 
-  const examAttempts = attempts
+  const examAttempts = (attempts || [])
     .filter((a) => a.examId === id && a.status === 'graded')
     .filter((a) => (a.studentEmail || a.userId || '').toLowerCase().includes(rosterSearch.toLowerCase()))
     .sort((a, b) => b.score - a.score)
@@ -84,9 +94,9 @@ export default function ExamAnalysisPage({ params }) {
     : 0
 
   // Topic Performance Analysis
-  const examQuestions = questions.filter(q => q.examId === id)
+  const examQuestions = (questions || []).filter(q => q.examId === id)
   const questionAnalysis = examQuestions.map(q => {
-    const qAnswers = answers.filter(ans => ans.questionId === q.id)
+    const qAnswers = (answers || []).filter(ans => ans.questionId === q.id)
     const correctCount = qAnswers.filter(ans => ans.isCorrect === true || ans.selectedOptionId?.toString() === q.correctOptionId?.toString()).length
     const totalAnswers = qAnswers.length
     const successRate = totalAnswers > 0 ? (correctCount / totalAnswers) * 100 : null

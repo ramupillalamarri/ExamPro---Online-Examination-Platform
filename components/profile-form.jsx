@@ -28,7 +28,7 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
 export function ProfileForm({ backUrl }) {
-  const { user, updateUserProfile } = useExamStore()
+  const { user, updateUserProfile, isHydrated, isAuthenticated } = useExamStore()
   const router = useRouter()
   const [isSaving, setIsSaving] = useState(false)
   
@@ -43,6 +43,16 @@ export function ProfileForm({ backUrl }) {
     graduationYear: "",
     bio: ""
   })
+
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push("/login")
+    }
+  }, [isHydrated, isAuthenticated, router])
+
+  if (!isHydrated || !isAuthenticated || !user) {
+    return null
+  }
 
   // Sync state with user data from store
   useEffect(() => {

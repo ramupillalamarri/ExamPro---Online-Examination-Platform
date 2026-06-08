@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, use } from "react"
+import { useState, useEffect, use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useExamStore } from "@/lib/store"
@@ -52,10 +52,26 @@ export default function QuestionsPage({
 
   const { id } = use(params)
   const router = useRouter()
-  const { exams, getExamQuestions, addQuestion, updateQuestion, deleteQuestion } =
+  const { exams, getExamQuestions, addQuestion, updateQuestion, deleteQuestion, user, isHydrated, isAuthenticated, fetchData } =
     useExamStore()
 
-  const exam = exams.find((e) => e.id === id)
+  useEffect(() => {
+    if (isHydrated) {
+      if (!isAuthenticated) {
+        router.push("/login")
+      } else if (user?.role === "student") {
+        router.push("/student")
+      } else {
+        fetchData()
+      }
+    }
+  }, [isHydrated, isAuthenticated, user, router, fetchData])
+
+  if (!isHydrated || !isAuthenticated || !user) {
+    return null
+  }
+
+  const exam = (exams || []).find((e) => e.id === id)
   const questions = getExamQuestions(id)
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)

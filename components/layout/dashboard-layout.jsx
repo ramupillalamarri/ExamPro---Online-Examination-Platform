@@ -89,12 +89,21 @@ export function DashboardLayout({ children }) {
     setSidebarOpen(false)
   }, [pathname])
 
-  // Check auth after all hooks
+  // Check auth and role access after all hooks
   useEffect(() => {
-    if (isHydrated && !isAuthenticated) {
-      router.push("/login")
+    if (isHydrated) {
+      if (!isAuthenticated) {
+        router.push("/login")
+      } else {
+        // Enforce role-based path restrictions
+        if (pathname.startsWith("/admin") && user?.role === "student") {
+          router.push("/student")
+        } else if ((pathname.startsWith("/student") || pathname.startsWith("/attempts")) && (user?.role === "teacher" || user?.role === "admin")) {
+          router.push("/admin")
+        }
+      }
     }
-  }, [isHydrated, isAuthenticated, router])
+  }, [isHydrated, isAuthenticated, user, pathname, router])
 
   // Return early only AFTER all hooks are defined
   if (!isHydrated || !isAuthenticated || !user) {

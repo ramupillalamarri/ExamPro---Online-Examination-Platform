@@ -75,18 +75,28 @@ const scaleIn = {
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const { exams, attempts, folders, user, questions, answers, fetchData, isHydrated } = useExamStore()
+  const { exams, attempts, folders, user, questions, answers, fetchData, isHydrated, isAuthenticated } = useExamStore()
   const [selectedExamAttempts, setSelectedExamAttempts] = useState(null)
 
   useEffect(() => {
-    if (isHydrated && user) {
-      fetchData()
+    if (isHydrated) {
+      if (!isAuthenticated) {
+        router.push("/login")
+      } else if (user?.role === "student") {
+        router.push("/student")
+      } else {
+        fetchData()
+      }
     }
-  }, [isHydrated, user?.id, fetchData])
+  }, [isHydrated, isAuthenticated, user, router, fetchData])
 
-  const publishedExams = exams.filter((e) => e.isPublished)
-  const totalAttempts = attempts.length
-  const gradedAttempts = attempts.filter((a) => a.status === "graded")
+  if (!isHydrated || !isAuthenticated || !user) {
+    return null
+  }
+
+  const publishedExams = (exams || []).filter((e) => e.isPublished)
+  const totalAttempts = (attempts || []).length
+  const gradedAttempts = (attempts || []).filter((a) => a.status === "graded")
   const averageScore =
     gradedAttempts.length > 0
       ? gradedAttempts.reduce((sum, a) => sum + ((a.score || 0) / (a.totalMarks || 1)) * 100, 0) /
@@ -96,7 +106,7 @@ export default function AdminDashboard() {
   const stats = [
     {
       title: "Total Exams",
-      value: exams.length,
+      value: (exams || []).length,
       description: `${publishedExams.length} published`,
       icon: FileText,
       trend: "+12%",
@@ -118,7 +128,7 @@ export default function AdminDashboard() {
     },
     {
       title: "Folders",
-      value: folders.length,
+      value: (folders || []).length,
       description: "Organizing exams",
       icon: FolderOpen,
       trend: null,
@@ -141,7 +151,7 @@ export default function AdminDashboard() {
   ]
 
   // Chart data
-  const examAttemptData = exams
+  const examAttemptData = (exams || [])
     .filter((e) => e.isPublished)
     .slice(0, 5)
     .map((exam) => ({
@@ -248,6 +258,7 @@ export default function AdminDashboard() {
             <Card className={`border-2 ${stat.borderColor} bg-card/80 backdrop-blur-sm hover:shadow-lg transition-shadow cursor-pointer`} onClick={() => {
               if (stat.title === "Folders") router.push('/admin/folders')
               else if (stat.title === "Total Exams") router.push('/admin/exams')
+              else if (stat.title === "Total Attempts" || stat.title === "Avg. Score") router.push('/admin/students')
             }}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -494,7 +505,7 @@ export default function AdminDashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            {exams.length === 0 ? (
+            {(!exams || exams.length === 0) ? (
               <div className="flex flex-col items-center justify-center py-12">
                 <motion.div
                   animate={{ y: [0, -8, 0] }}
@@ -517,7 +528,7 @@ export default function AdminDashboard() {
                 animate="visible"
                 className="space-y-3"
               >
-                {exams.slice(0, 5).map((exam) => (
+                {(exams || []).slice(0, 5).map((exam) => (
                   <motion.div
                     key={exam.id}
                     variants={fadeInUp}
@@ -560,6 +571,18 @@ export default function AdminDashboard() {
                       <Button 
                         onClick={(e) => {
                           e.stopPropagation();
+                          setSelectedExamAttempts(exam);
+                        }} 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 gap-1 border-dashed hover:border-primary/50 text-primary hover:bg-primary/5"
+                      >
+                        <BarChart3 className="h-3 w-3" />
+                        Quick Analyze
+                      </Button>
+                      <Button 
+                        onClick={(e) => {
+                          e.stopPropagation();
                           router.push(`/admin/exams/${exam.id}`);
                         }} 
                         variant="outline" 
@@ -595,7 +618,7 @@ export default function AdminDashboard() {
           </DialogHeader>
 
           {(() => {
-            const examAttempts = attempts
+            const examAttempts = (attempts || [])
               .filter((a) => a.examId === selectedExamAttempts?.id && a.status === 'graded')
               .sort((a, b) => b.score - a.score);
 
@@ -621,9 +644,9 @@ export default function AdminDashboard() {
             const avgWarnings = examAttempts.reduce((sum, a) => sum + (a.warnings || 0), 0) / totalAttemptsCount;
 
             // Topic Performance Analysis
-            const examQuestions = questions.filter(q => q.examId === selectedExamAttempts?.id);
+            const examQuestions = (questions || []).filter(q => q.examId === selectedExamAttempts?.id);
             const questionAnalysis = examQuestions.map(q => {
-              const qAnswers = answers.filter(ans => ans.questionId === q.id);
+              const qAnswers = (answers || []).filter(ans => ans.questionId === q.id);
               const correctCount = qAnswers.filter(ans => ans.isCorrect === true || ans.selectedOptionId?.toString() === q.correctOptionId?.toString()).length;
               const totalAnswers = qAnswers.length;
               const successRate = totalAnswers > 0 ? (correctCount / totalAnswers) * 100 : null;

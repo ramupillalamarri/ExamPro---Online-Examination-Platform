@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { useExamStore } from "@/lib/store"
@@ -53,12 +53,26 @@ const staggerContainer = {
 
 export default function StudentDashboardPage() {
   const router = useRouter()
-  const { user, exams, folders, attempts, getAttemptStats } = useExamStore()
+  const { user, exams, folders, attempts, getAttemptStats, isHydrated, isAuthenticated } = useExamStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [folderFilter, setFolderFilter] = useState("all")
   const [selectedExam, setSelectedExam] = useState(null)
 
-  const publishedExams = exams.filter((e) => e.isPublished)
+  useEffect(() => {
+    if (isHydrated) {
+      if (!isAuthenticated) {
+        router.push("/login")
+      } else if (user?.role === "teacher" || user?.role === "admin") {
+        router.push("/admin")
+      }
+    }
+  }, [isHydrated, isAuthenticated, user, router])
+
+  if (!isHydrated || !isAuthenticated || !user) {
+    return null
+  }
+
+  const publishedExams = (exams || []).filter((e) => e.isPublished)
 
   // Filter exams that are visible to all students (created by admin or system level accounts)
   const publicExams = publishedExams.filter(
@@ -90,7 +104,7 @@ export default function StudentDashboardPage() {
   const handleStartExam = (exam) => {
     const { inProgress, canAttempt } = getAttemptStatus(exam.id)
     if (inProgress) {
-      window.location.href = `/exam/${exam.id}`
+      router.push(`/exam/${exam.id}`)
     } else if (canAttempt) {
       setSelectedExam(exam)
     }
@@ -142,7 +156,7 @@ export default function StudentDashboardPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Subjects</SelectItem>
-            {folders.map((folder) => (
+            {(folders || []).map((folder) => (
               <SelectItem key={folder.id} value={folder.id}>
                 {folder.name}
               </SelectItem>
@@ -205,7 +219,7 @@ export default function StudentDashboardPage() {
                   <Card 
                     onClick={() => {
                       if (attemptCount > 0) {
-                        const completedAttempts = attempts.filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
+                        const completedAttempts = (attempts || []).filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
                         if (completedAttempts.length > 0) {
                           completedAttempts.sort((a, b) => new Date(b.submittedAt || b.startedAt) - new Date(a.submittedAt || a.startedAt));
                           router.push(`/exam/${exam.id}/review?attempt=${completedAttempts[0].id}`);
@@ -236,7 +250,7 @@ export default function StudentDashboardPage() {
                             className="bg-success/10 text-success border-success/20 cursor-pointer hover:bg-success/20"
                             onClick={(e) => {
                               e.stopPropagation();
-                              const completedAttempts = attempts.filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
+                              const completedAttempts = (attempts || []).filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
                               if (completedAttempts.length > 0) {
                                 completedAttempts.sort((a, b) => new Date(b.submittedAt || b.startedAt) - new Date(a.submittedAt || a.startedAt));
                                 router.push(`/exam/${exam.id}/review?attempt=${completedAttempts[0].id}`);
@@ -300,7 +314,7 @@ export default function StudentDashboardPage() {
                             onClick={(e) => {
                               e.stopPropagation();
                               if (!canAttempt && attemptCount > 0) {
-                                const completedAttempts = attempts.filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
+                                const completedAttempts = (attempts || []).filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
                                 if (completedAttempts.length > 0) {
                                   completedAttempts.sort((a, b) => new Date(b.submittedAt || b.startedAt) - new Date(a.submittedAt || a.startedAt));
                                   router.push(`/exam/${exam.id}/review?attempt=${completedAttempts[0].id}`);
