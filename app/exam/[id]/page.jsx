@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import {
   AlertDialog,
@@ -33,6 +35,68 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
+const renderRichText = (text) => {
+  if (!text) return null;
+  
+  // Regex to match markdown images: ![image](data:...) or ![image](http...)
+  const regex = /!\[.*?\]\((.*?)\)/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = regex.exec(text)) !== null) {
+    const matchIndex = match.index;
+    const imageUrl = match[1];
+    
+    if (matchIndex > lastIndex) {
+      parts.push({
+        type: 'text',
+        content: text.substring(lastIndex, matchIndex)
+      });
+    }
+    
+    parts.push({
+      type: 'image',
+      content: imageUrl
+    });
+    
+    lastIndex = regex.lastIndex;
+  }
+  
+  if (lastIndex < text.length) {
+    parts.push({
+      type: 'text',
+      content: text.substring(lastIndex)
+    });
+  }
+  
+  return (
+    <div className="space-y-3">
+      {parts.map((part, idx) => {
+        if (part.type === 'image') {
+          return (
+            <div key={idx} className="my-3 max-w-full rounded-2xl overflow-hidden border border-border bg-muted/30 p-2 flex items-center justify-center">
+              <img
+                key={part.content}
+                src={part.content}
+                alt="Embedded Visual"
+                className="max-h-[350px] w-auto object-contain rounded-xl shadow-sm"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            </div>
+          );
+        } else {
+          return (
+            <p key={idx} className="text-base sm:text-lg leading-relaxed text-foreground whitespace-pre-wrap font-medium">
+              {part.content}
+            </p>
+          );
+        }
+      })}
+    </div>
+  );
+};
+
 export default function ExamPage({ params }) {
   const { id } = use(params)
   const router = useRouter()
@@ -47,6 +111,7 @@ export default function ExamPage({ params }) {
     getAttemptAnswers,
     submitAttempt,
     updateAttemptWarnings,
+    getAttemptStats,
   } = useExamStore()
 
   const [isStarted, setIsStarted] = useState(false)
@@ -57,11 +122,30 @@ export default function ExamPage({ params }) {
   const [showTerminationDialog, setShowTerminationDialog] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [descriptiveText, setDescriptiveText] = useState("")
 
   const exam = exams.find((e) => e.id === id)
   const questions = getExamQuestions(id)
   const attempt = getCurrentAttempt(id)
   const answers = attempt ? getAttemptAnswers(attempt.id) : []
+  const allAttempts = useExamStore((s) => s.attempts || [])
+  const attemptStats = getAttemptStats ? getAttemptStats(id, user?.id) : null
+  const canAttempt = attemptStats?.canAttempt ?? true
+
+  // Find best (highest scoring) graded attempt for this user+exam
+  const gradedAttempts = allAttempts.filter((a) => a.examId === id && a.userId === user?.id && a.status === 'graded')
+  const bestAttempt = gradedAttempts.length ? gradedAttempts.reduce((best, cur) => (cur.score || 0) > (best.score || 0) ? cur : best, gradedAttempts[0]) : null
+  const bestAttemptId = bestAttempt?.id || null
+
+  const currentQuestion = questions[currentQuestionIndex]
+  const currentAnswer = answers.find((a) => a.questionId === currentQuestion?.id)
+
+  // Sync descriptive answer text local state
+  useEffect(() => {
+    if (currentQuestion?.questionType === "text") {
+      setDescriptiveText(currentAnswer?.descriptiveAnswer || "")
+    }
+  }, [currentQuestionIndex, currentQuestion, currentAnswer])
 
   // Check auth and exam publication status
   useEffect(() => {
@@ -124,25 +208,30 @@ export default function ExamPage({ params }) {
     if (!isStarted || !attempt) return
 
     const handleVisibilityChange = async () => {
-      if (document.hidden) {
+      if (document.hidden && attempt?.status === 'in_progress') {
         try {
-          // Await the warning update to get the actual warning count from server
           const updatedAttempt = await updateAttemptWarnings(attempt.id)
-          const currentWarnings = updatedAttempt?.warnings || (attempt.warnings + 1)
-          
+          const currentWarnings = Number(updatedAttempt?.warnings ?? attempt?.warnings ?? 0)
+
           if (currentWarnings >= 4) {
-            exitFullscreen()
+            await exitFullscreen()
             setIsSubmitting(true)
             toast.error("Exam terminated: Tab switched more than 3 times!")
-            // Automatically submit exam
-            await submitAttempt(attempt.id)
-            setShowTerminationDialog(true)
+            try {
+              await submitAttempt(attempt.id)
+            } catch (submitErr) {
+              console.error('Auto-submit failed:', submitErr)
+              toast.error('Auto-submit failed. Redirecting to results page.')
+            }
+            router.push(`/exam/${id}/result?attempt=${attempt.id}`)
           } else {
             setShowWarningDialog(true)
           }
         } catch (err) {
           console.error('Error handling visibility change:', err)
           toast.error('Error recording tab switch. Please retry.')
+        } finally {
+          setIsSubmitting(false)
         }
       }
     }
@@ -151,7 +240,7 @@ export default function ExamPage({ params }) {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
-  }, [isStarted, attempt, updateAttemptWarnings, submitAttempt])
+  }, [isStarted, attempt, updateAttemptWarnings, submitAttempt, router, id])
 
   // Fullscreen Helpers
   const enterFullscreen = async () => {
@@ -212,9 +301,6 @@ export default function ExamPage({ params }) {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
 
-  const currentQuestion = questions[currentQuestionIndex]
-  const currentAnswer = answers.find((a) => a.questionId === currentQuestion?.id)
-
   const handleSelectOption = useCallback(
     async (optionId) => {
       if (!attempt || !currentQuestion) return
@@ -227,18 +313,63 @@ export default function ExamPage({ params }) {
     [attempt, currentQuestion, saveAnswer]
   )
 
+  const handleToggleMsqOption = useCallback(
+    async (optionId, checked) => {
+      if (!attempt || !currentQuestion) return
+
+      setIsSaving(true)
+      const currentSelecteds = (currentAnswer?.selectedOptionId || '').split(',').filter(Boolean)
+      let newSelecteds
+      if (checked) {
+        if (!currentSelecteds.includes(optionId)) {
+          newSelecteds = [...currentSelecteds, optionId]
+        } else {
+          newSelecteds = currentSelecteds
+        }
+      } else {
+        newSelecteds = currentSelecteds.filter(id => id !== optionId)
+      }
+      
+      await saveAnswer(attempt.id, currentQuestion.id, newSelecteds.join(','))
+      setIsSaving(false)
+    },
+    [attempt, currentQuestion, currentAnswer, saveAnswer]
+  )
+
+  const handleSaveDescriptiveAnswer = useCallback(
+    async (text) => {
+      if (!attempt || !currentQuestion) return
+
+      setIsSaving(true)
+      await saveAnswer(attempt.id, currentQuestion.id, null, text)
+      setIsSaving(false)
+    },
+    [attempt, currentQuestion, saveAnswer]
+  )
+
   const handleSubmit = async () => {
     if (!attempt) return
 
     setIsSubmitting(true)
     await exitFullscreen()
-    await submitAttempt(attempt.id)
-    toast.success("Exam submitted successfully!")
-    router.push(`/exam/${id}/result?attempt=${attempt.id}`)
+    try {
+      await submitAttempt(attempt.id)
+      toast.success("Exam submitted successfully!")
+      router.push(`/exam/${id}/result?attempt=${attempt.id}`)
+    } catch (err) {
+      console.error('Submit attempt failed:', err)
+      toast.error(err?.message || 'Failed to submit exam. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const getQuestionStatus = (questionId) => {
+    const q = questions.find((item) => item.id === questionId)
     const answer = answers.find((a) => a.questionId === questionId)
+    if (q?.questionType === "text") {
+      return answer?.descriptiveAnswer?.trim() ? "answered" : "unanswered"
+    }
     return answer?.selectedOptionId ? "answered" : "unanswered"
   }
 
@@ -318,9 +449,20 @@ export default function ExamPage({ params }) {
               </ul>
             </div>
 
-            <Button onClick={handleStartExam} className="w-full h-12 text-base font-semibold bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/20">
-              <Play className="h-4 w-4 mr-2" /> Start Exam & Fullscreen
-            </Button>
+            {canAttempt ? (
+              <Button onClick={handleStartExam} className="w-full h-12 text-base font-semibold bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/20">
+                <Play className="h-4 w-4 mr-2" /> Start Exam & Fullscreen
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <div className="text-sm text-muted-foreground">You have reached the maximum number of attempts for this exam.</div>
+                <Button asChild className="w-full h-12">
+                  <Link href={bestAttemptId ? `/exam/${id}/review?attempt=${bestAttemptId}` : `/exam/${id}/review`}>
+                    <a className="w-full flex items-center justify-center"><BookOpen className="h-4 w-4 mr-2" /> Review Highest Scoring Attempt</a>
+                  </Link>
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -472,36 +614,121 @@ export default function ExamPage({ params }) {
                   )}
                 </div>
 
-                <div className="flex-1 overflow-y-auto space-y-4">
-                  <p className="text-base sm:text-xl font-semibold leading-8 text-foreground">
-                    {currentQuestion.questionText}
-                  </p>
+                <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+                  {renderRichText(currentQuestion.questionText)}
 
-                  <RadioGroup
-                    value={currentAnswer?.selectedOptionId || ""}
-                    onValueChange={handleSelectOption}
-                    className="space-y-3"
-                  >
-                    {currentQuestion.options.map((option) => (
-                      <label
-                        key={option.id}
-                        htmlFor={option.id}
-                        className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${
-                          currentAnswer?.selectedOptionId === option.id
-                            ? "border-primary bg-primary/5 shadow-sm"
-                            : "border-border hover:border-primary/40 hover:bg-muted/50"
-                        }`}
-                      >
-                        <RadioGroupItem value={option.id} id={option.id} className="shrink-0" />
-                        <span className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-semibold uppercase shrink-0">
-                          {option.id}
-                        </span>
-                        <span className="flex-1 text-sm sm:text-base text-foreground leading-relaxed">
-                          {option.text}
-                        </span>
-                      </label>
-                    ))}
-                  </RadioGroup>
+                  {currentQuestion.questionImage && !currentQuestion.questionText?.includes(currentQuestion.questionImage) && (
+                    <div className="my-4 max-w-full rounded-2xl overflow-hidden border border-border bg-muted/30 p-2 flex items-center justify-center">
+                      <img
+                        key={currentQuestion.questionImage}
+                        src={currentQuestion.questionImage}
+                        alt="Question Visual"
+                        className="max-h-[320px] w-auto object-contain rounded-xl"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    </div>
+                  )}
+
+                  {currentQuestion.questionType === "text" ? (
+                    <div className="space-y-3 pt-2">
+                      <p className="text-sm font-semibold text-muted-foreground">
+                        Your Answer:
+                      </p>
+                      <Textarea
+                        id="descriptive-answer"
+                        placeholder="Type your detailed descriptive answer here..."
+                        value={descriptiveText}
+                        onChange={(e) => setDescriptiveText(e.target.value)}
+                        onBlur={() => handleSaveDescriptiveAnswer(descriptiveText)}
+                        className="min-h-[200px] text-base leading-relaxed p-4 border-border rounded-xl focus-visible:ring-primary focus-visible:ring-offset-0"
+                      />
+                      <div className="flex justify-between items-center text-[10px] text-muted-foreground px-1">
+                        <span>Changes are saved automatically when you click outside or navigate away.</span>
+                        <span>{descriptiveText.length} characters</span>
+                      </div>
+                    </div>
+                  ) : currentQuestion.questionType === "msq" ? (
+                    <div className="space-y-3">
+                      {currentQuestion.options.map((option) => {
+                        const isChecked = (currentAnswer?.selectedOptionId || "")
+                          .split(",")
+                          .filter(Boolean)
+                          .includes(option.id)
+                        return (
+                          <label
+                            key={option.id}
+                            htmlFor={`option-${option.id}`}
+                            className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${
+                              isChecked
+                                ? "border-primary bg-primary/5 shadow-sm"
+                                : "border-border hover:border-primary/40 hover:bg-muted/50"
+                            }`}
+                          >
+                            <Checkbox
+                              id={`option-${option.id}`}
+                              checked={isChecked}
+                              onCheckedChange={(checked) => handleToggleMsqOption(option.id, !!checked)}
+                              className="shrink-0 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            />
+                            <span className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-semibold uppercase shrink-0">
+                              {option.id}
+                            </span>
+                            <div className="flex-1 flex flex-col gap-2">
+                              {option.text && renderRichText(option.text)}
+                              {option.imageUrl && (
+                                <div className="max-w-xl rounded overflow-hidden border border-border bg-muted/50 mt-1">
+                                  <img
+                                    key={option.imageUrl}
+                                    src={option.imageUrl}
+                                    alt={`Option ${option.id}`}
+                                    className="max-h-[260px] object-contain"
+                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <RadioGroup
+                      value={currentAnswer?.selectedOptionId || ""}
+                      onValueChange={handleSelectOption}
+                      className="space-y-3"
+                    >
+                      {currentQuestion.options.map((option) => (
+                        <label
+                          key={option.id}
+                          htmlFor={option.id}
+                          className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${
+                            currentAnswer?.selectedOptionId === option.id
+                              ? "border-primary bg-primary/5 shadow-sm"
+                              : "border-border hover:border-primary/40 hover:bg-muted/50"
+                          }`}
+                        >
+                          <RadioGroupItem value={option.id} id={option.id} className="shrink-0" />
+                          <span className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-semibold uppercase shrink-0">
+                            {option.id}
+                          </span>
+                          <div className="flex-1 flex flex-col gap-2">
+                            {option.text && renderRichText(option.text)}
+                            {option.imageUrl && (
+                              <div className="max-w-xl rounded overflow-hidden border border-border bg-muted/50 mt-1">
+                                <img
+                                  key={option.imageUrl}
+                                  src={option.imageUrl}
+                                  alt={`Option ${option.id}`}
+                                  className="max-h-[260px] object-contain"
+                                  onError={(e) => { e.target.style.display = 'none'; }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                      ))}
+                    </RadioGroup>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -590,12 +817,12 @@ export default function ExamPage({ params }) {
               <AlertTriangle className="h-5 w-5 animate-bounce" />
               Warning: Tab Switch Detected
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              <div className="space-y-4">
-                <p>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4 text-sm text-muted-foreground">
+                <div>
                   You switched away from the exam tab. This has been recorded
                   warning. If you switch tabs more than 3 times, your exam will be terminated immediately.
-                </p>
+                </div>
                 <div className="p-3.5 rounded-lg bg-warning/10 text-warning font-semibold text-sm">
                   Warnings given: {attempt?.warnings || 0} / 3
                 </div>

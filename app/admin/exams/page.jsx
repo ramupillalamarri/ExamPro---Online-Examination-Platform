@@ -351,22 +351,6 @@ export default function ExamsPage() {
         </div>
 
         <div className="flex items-center gap-2.5 self-start sm:self-auto">
-          {viewMode === "explorer" && !isSearchingInExplorer && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                const newExamUrl = currentFolderId 
-                  ? `/admin/exams/new?folderId=${currentFolderId}` 
-                  : "/admin/exams/new"
-                router.push(newExamUrl)
-              }}
-              className="border-primary/20 text-primary hover:bg-primary/5 font-bold text-xs h-10 px-4 rounded-xl bg-background shadow-sm"
-            >
-              <Plus className="mr-1.5 h-4 w-4" />
-              Create Exam Here
-            </Button>
-          )}
-
           <Button 
             onClick={() => {
               const newExamUrl = (viewMode === "explorer" && currentFolderId) 
@@ -581,6 +565,7 @@ export default function ExamsPage() {
                       key={exam.id} 
                       exam={exam} 
                       router={router} 
+                      originFolderId={currentFolderId || exam.folderId}
                       handleTogglePublish={handleTogglePublish} 
                       setDeleteTarget={setDeleteTarget} 
                       setSelectedExamAttempts={setSelectedExamAttempts} 
@@ -753,6 +738,7 @@ export default function ExamsPage() {
                         key={exam.id} 
                         exam={exam} 
                         router={router} 
+                        originFolderId={currentFolderId || exam.folderId}
                         handleTogglePublish={handleTogglePublish} 
                         setDeleteTarget={setDeleteTarget} 
                         setSelectedExamAttempts={setSelectedExamAttempts} 
@@ -1167,7 +1153,11 @@ export default function ExamsPage() {
 }
 
 // Reusable Teacher Exam List Row Item Component
-function ExamListItem({ exam, router, handleTogglePublish, setDeleteTarget, setSelectedExamAttempts }) {
+function ExamListItem({ exam, router, originFolderId, handleTogglePublish, setDeleteTarget, setSelectedExamAttempts }) {
+  const questionsUrl = originFolderId
+    ? `/admin/exams/${exam.id}/questions?folderId=${originFolderId}`
+    : `/admin/exams/${exam.id}/questions`
+
   return (
     <motion.div
       variants={fadeInUp}
@@ -1230,7 +1220,7 @@ function ExamListItem({ exam, router, handleTogglePublish, setDeleteTarget, setS
               <Button 
                 onClick={(e) => {
                   e.stopPropagation();
-                  router.push(`/admin/exams/${exam.id}/questions`);
+                  router.push(questionsUrl);
                 }} 
                 variant="outline" 
                 size="sm"

@@ -69,7 +69,7 @@ const FOLDER_COLORS = [
 
 export default function StudentExamsPage() {
   const router = useRouter()
-  const { user, exams, folders, attempts, getAttemptStats, currentUserCode, fetchExamsByUserCode, setCurrentUserCode } = useExamStore()
+  const { user, exams, folders, attempts, getAttemptStats, currentUserCode, fetchData, setCurrentUserCode, isHydrated } = useExamStore()
   
   const [viewMode, setViewMode] = useState("explorer") // "explorer" or "list"
   const [currentFolderId, setCurrentFolderId] = useState(null)
@@ -78,17 +78,17 @@ export default function StudentExamsPage() {
   const [selectedExam, setSelectedExam] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch exams when currentUserCode changes
+  // Fetch student data when the user context is ready
   useEffect(() => {
-    const fetchExams = async () => {
+    const loadStudentData = async () => {
       setIsLoading(true)
-      if (currentUserCode) {
-        await fetchExamsByUserCode(currentUserCode)
+      if (isHydrated && user?.id) {
+        await fetchData()
       }
       setIsLoading(false)
     }
-    fetchExams()
-  }, [currentUserCode, fetchExamsByUserCode])
+    loadStudentData()
+  }, [currentUserCode, fetchData, isHydrated, user?.id])
 
   const publishedExams = useMemo(() => {
     return (exams || []).filter((e) => e.isPublished)
@@ -595,9 +595,15 @@ function ExamGridItem({ exam, getAttemptStatus, attempts, user, router, handleSt
       (a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded'
     )
     if (completedAttempts.length > 0) {
-      completedAttempts.sort(
-        (a, b) => new Date(b.submittedAt || b.startedAt).getTime() - new Date(a.startedAt || a.startedAt).getTime()
-      )
+      // Prefer highest score; tie-breaker: earliest submitted
+      completedAttempts.sort((a, b) => {
+        const scoreA = a.score || 0
+        const scoreB = b.score || 0
+        if (scoreB !== scoreA) return scoreB - scoreA
+        const submittedA = new Date(a.submittedAt || a.startedAt || 0).getTime()
+        const submittedB = new Date(b.submittedAt || b.startedAt || 0).getTime()
+        return submittedA - submittedB
+      })
       router.push(`/exam/${exam.id}/review?attempt=${completedAttempts[0].id}`)
     }
   }

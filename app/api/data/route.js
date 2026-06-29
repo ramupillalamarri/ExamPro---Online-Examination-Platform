@@ -97,27 +97,30 @@ export async function GET(req) {
     const examsRes = await query(examsQuery);
 
     // 3. Fetch Questions
-    let questionsQuery = `
-      SELECT 
-        q.id, 
-        q.exam_id as "examId", 
-        q.question_text as "questionText", 
-        q.options, 
-        q.correct_option_id as "correctOptionId", 
-        q.subject, 
-        q.topic, 
-        q.marks, 
-        q.negative_marking::numeric::double precision as "negativeMarking",
-        q.order_index as "orderIndex", 
-        q.created_at as "createdAt"
-      FROM questions q
-      JOIN exams_${safeCode} e ON q.exam_id = e.id
-    `;
-    if (!isTeacher) {
-      questionsQuery += ' WHERE e.is_published = true ';
+    let questions = [];
+    if (examId) {
+      let questionsQuery = `
+        SELECT 
+          q.id, 
+          q.exam_id as "examId", 
+          q.question_text as "questionText", 
+          q.options, 
+          q.correct_option_id as "correctOptionId", 
+          q.subject, 
+          q.topic, 
+          q.marks, 
+          q.negative_marking::numeric::double precision as "negativeMarking",
+          q.order_index as "orderIndex", 
+          q.question_image as "questionImage",
+          q.question_type as "questionType",
+          q.created_at as "createdAt"
+        FROM questions q
+        WHERE q.exam_id = $1
+        ORDER BY q.order_index ASC, q.created_at ASC
+      `;
+      const questionsRes = await query(questionsQuery, [examId]);
+      questions = questionsRes.rows;
     }
-    questionsQuery += ' ORDER BY q.order_index ASC, q.created_at ASC';
-    const questionsRes = await query(questionsQuery);
 
     // 4. Fetch Attempts
     let attemptsQuery = `
@@ -153,6 +156,7 @@ export async function GET(req) {
         an.attempt_id as "attemptId", 
         an.question_id as "questionId", 
         an.selected_option_id as "selectedOptionId", 
+        an.descriptive_answer as "descriptiveAnswer",
         an.is_correct as "isCorrect", 
         an.updated_at as "updatedAt"
       FROM answers an
@@ -188,7 +192,7 @@ export async function GET(req) {
     return NextResponse.json({
       folders: foldersRes.rows,
       exams: examsRes.rows,
-      questions: questionsRes.rows,
+      questions: questions,
       attempts: attemptsRes.rows,
       answers: answersRes.rows,
       aiFeedback: feedbackRes.rows,

@@ -33,22 +33,54 @@ export async function POST( req) {
     let score = 0;
     const totalMarks = questions.reduce((sum, q) => sum + (q.marks || 2), 0);
 
+    const normalizeOptionId = (value) => {
+      return typeof value === 'string' ? value.trim().toLowerCase() : '';
+    };
+
+    const normalizeOptionSet = (value) => {
+      return new Set(
+        (typeof value === 'string' ? value : '')
+          .split(',')
+          .map((item) => item.trim().toLowerCase())
+          .filter(Boolean)
+      );
+    };
+
+    const hasSelectedOption = (value) => {
+      return normalizeOptionId(value).length > 0;
+    };
+
+    const areMsqAnswersEqual = (correctOptionId, selectedOptionId) => {
+      const correctSet = normalizeOptionSet(correctOptionId);
+      const selectedSet = normalizeOptionSet(selectedOptionId);
+      if (correctSet.size !== selectedSet.size) return false;
+      for (const optionId of correctSet) {
+        if (!selectedSet.has(optionId)) return false;
+      }
+      return true;
+    };
+
     // 5. Grade each answer
+    const answersToUpdate = [];
     for (const answer of answers) {
       const question = questions.find((q) => q.id === answer.question_id);
       if (!question) continue;
 
-      const isCorrect = answer.selected_option_id === question.correct_option_id;
+      let isCorrect = false;
+      if (question.question_type === 'text') {
+        isCorrect = null; // Descriptive answers are ungraded (pending manual review)
+      } else if (question.question_type === 'msq') {
+        isCorrect = areMsqAnswersEqual(question.correct_option_id, answer.selected_option_id);
+      } else {
+        isCorrect = normalizeOptionId(answer.selected_option_id) === normalizeOptionId(question.correct_option_id);
+      }
       
-      // Update is_correct status in DB
-      await query(
-        'UPDATE answers SET is_correct = $1 WHERE id = $2',
-        [isCorrect, answer.id]
-      );
+      answer.is_correct = isCorrect;
+      answersToUpdate.push({ id: answer.id, isCorrect });
 
-      if (isCorrect) {
+      if (isCorrect === true) {
         score += (question.marks || 2);
-      } else if (answer.selected_option_id !== null && answer.selected_option_id !== undefined) {
+      } else if (isCorrect === false && hasSelectedOption(answer.selected_option_id)) {
         const negMarking = question.negative_marking !== undefined && question.negative_marking !== null
           ? parseFloat(question.negative_marking)
           : (exam.negative_marking ? parseFloat(exam.negative_marking) : 0);
@@ -56,6 +88,29 @@ export async function POST( req) {
           score -= (question.marks || 2) * negMarking;
         }
       }
+    }
+
+    // Perform bulk update in a single query
+    if (answersToUpdate.length > 0) {
+      const caseParts = [];
+      const ids = [];
+      const params = [];
+      let idx = 1;
+      for (const ans of answersToUpdate) {
+        // Cast the boolean parameter explicitly to avoid type inference issues
+        caseParts.push(`WHEN $${idx} THEN $${idx + 1}::boolean`);
+        params.push(ans.id, ans.isCorrect);
+        ids.push(`$${idx}`);
+        idx += 2;
+      }
+      const bulkQuery = `
+        UPDATE answers
+        SET is_correct = CASE id
+          ${caseParts.join('\n')}
+        END
+        WHERE id IN (${ids.join(', ')})
+      `;
+      await query(bulkQuery, params);
     }
 
     score = Math.max(0, score);
@@ -122,7 +177,8 @@ export async function POST( req) {
     // 7. Generate AI Feedback
     const wrongAnswers = answers.filter((ans) => {
       const q = questions.find((qi) => qi.id === ans.question_id);
-      return ans.selected_option_id && ans.selected_option_id !== q?.correct_option_id;
+      if (q?.question_type === 'text') return false;
+      return ans.is_correct === false;
     });
 
     const mistakeAnalysis = wrongAnswers.map((ans) => {
@@ -131,12 +187,35 @@ export async function POST( req) {
       
       // Parse options if they're stored as JSON string
       const options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options || [];
-      const selected = options.find((o) => o.id === ans.selected_option_id);
-      const correct = options.find((o) => o.id === q.correct_option_id);
+      
+      let selectedText = '';
+      let correctText = '';
+      
+      if (q.question_type === 'msq') {
+        const selectedIds = (ans.selected_option_id || '').split(',').map((id) => id.trim()).filter(Boolean);
+        const correctIds = (q.correct_option_id || '').split(',').map((id) => id.trim()).filter(Boolean);
+        
+        const selectedLabels = selectedIds.map(id => {
+          const opt = options.find(o => o.id === id);
+          return opt?.text ? `"${opt.text}"` : id.toUpperCase();
+        });
+        const correctLabels = correctIds.map(id => {
+          const opt = options.find(o => o.id === id);
+          return opt?.text ? `"${opt.text}"` : id.toUpperCase();
+        });
+        
+        selectedText = selectedLabels.join(', ') || 'None';
+        correctText = correctLabels.join(', ');
+      } else {
+        const selected = options.find((o) => o.id === ans.selected_option_id);
+        const correct = options.find((o) => o.id === q.correct_option_id);
+        selectedText = selected?.text ? `"${selected.text}"` : (ans.selected_option_id || 'None').toUpperCase();
+        correctText = correct?.text ? `"${correct.text}"` : (q.correct_option_id || '').toUpperCase();
+      }
       
       return {
         questionId: ans.question_id,
-        explanation: `You selected "${selected?.text || ans.selected_option_id}" but the correct answer is "${correct?.text || q.correct_option_id}". ${
+        explanation: `You selected ${selectedText} but the correct answer is ${correctText}. ${
           q.topic ? `This question tests your understanding of ${q.topic}.` : ''
         } Review the concept and practice similar problems.`
       };
@@ -199,6 +278,15 @@ export async function POST( req) {
         examTitle: exam.title
       },
       updatedAttempts,
+      answers: answers.map((ans) => ({
+        id: ans.id,
+        attemptId: ans.attempt_id,
+        questionId: ans.question_id,
+        selectedOptionId: ans.selected_option_id,
+        descriptiveAnswer: ans.descriptive_answer,
+        isCorrect: ans.is_correct,
+        updatedAt: ans.updated_at,
+      })),
       feedback: {
         id: feedbackId,
         attemptId,

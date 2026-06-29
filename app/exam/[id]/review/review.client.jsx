@@ -49,6 +49,67 @@ const renderMessageText = (text) => {
   })
 }
 
+const renderRichText = (text) => {
+  if (!text) return null;
+  
+  const regex = /!\[.*?\]\((.*?)\)/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = regex.exec(text)) !== null) {
+    const matchIndex = match.index;
+    const imageUrl = match[1];
+    
+    if (matchIndex > lastIndex) {
+      parts.push({
+        type: 'text',
+        content: text.substring(lastIndex, matchIndex)
+      });
+    }
+    
+    parts.push({
+      type: 'image',
+      content: imageUrl
+    });
+    
+    lastIndex = regex.lastIndex;
+  }
+  
+  if (lastIndex < text.length) {
+    parts.push({
+      type: 'text',
+      content: text.substring(lastIndex)
+    });
+  }
+  
+  return (
+    <div className="space-y-3 mb-4">
+      {parts.map((part, idx) => {
+        if (part.type === 'image') {
+          return (
+            <div key={idx} className="my-3 max-w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-50 p-1 flex-shrink-0 flex items-center justify-center">
+              <img
+                key={part.content}
+                src={part.content}
+                alt="Embedded Visual"
+                className="max-h-[250px] w-auto object-contain rounded-lg shadow-sm"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            </div>
+          );
+        } else {
+          return (
+            <p key={idx} className="text-[14.5px] leading-relaxed text-slate-700 whitespace-pre-wrap font-semibold">
+              {part.content}
+            </p>
+          );
+        }
+      })}
+    </div>
+  );
+};
+
 export default function ReviewClient({ examId }) {
   const { user } = useExamStore()
   const [loading, setLoading] = useState(true)
@@ -169,10 +230,35 @@ export default function ReviewClient({ examId }) {
 
   const getAnswerForQuestion = (qId) => answers.find((a) => a.questionId === qId)
 
+  const normalizeOptionId = (value) => {
+    return typeof value === 'string' ? value.trim().toLowerCase() : ''
+  }
+
+  const normalizeOptionSet = (value) => {
+    return new Set(
+      (typeof value === 'string' ? value : '')
+        .split(',')
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean)
+    )
+  }
+
   const getQuestionStatus = (q) => {
     const ans = getAnswerForQuestion(q.id)
     if (!ans) return 'skipped'
-    if (ans.selectedOptionId?.toString() === q.correctOptionId?.toString()) return 'correct'
+    if (q.questionType === 'text') {
+      return ans.descriptiveAnswer?.trim() ? 'correct' : 'skipped'
+    }
+    if (q.questionType === 'msq') {
+      const correctSet = normalizeOptionSet(q.correctOptionId)
+      const selectedSet = normalizeOptionSet(ans.selectedOptionId)
+      if (correctSet.size !== selectedSet.size) return 'incorrect'
+      for (let item of correctSet) {
+        if (!selectedSet.has(item)) return 'incorrect'
+      }
+      return 'correct'
+    }
+    if (normalizeOptionId(ans.selectedOptionId) === normalizeOptionId(q.correctOptionId)) return 'correct'
     return 'incorrect'
   }
 
@@ -214,6 +300,7 @@ export default function ReviewClient({ examId }) {
           question: {
             id: currentQuestion.id,
             questionText: currentQuestion.questionText,
+            questionImage: currentQuestion.questionImage || null,
             options: options,
             correctOptionId: currentQuestion.correctOptionId,
             topic: currentQuestion.topic || "General",
@@ -275,34 +362,36 @@ export default function ReviewClient({ examId }) {
   
   const currentAnswer = getAnswerForQuestion(currentQuestion.id)
   const currentStatus = getQuestionStatus(currentQuestion)
-  const correctOptionId = currentQuestion.correctOptionId?.toString()
-  const selectedOptionId = currentAnswer?.selectedOptionId?.toString()
+  const correctOptionId = normalizeOptionId(currentQuestion.correctOptionId)
+  const selectedOptionId = normalizeOptionId(currentAnswer?.selectedOptionId)
 
   const leftColumnContent = (
     <div ref={leftColumnRef} className="flex-1 flex flex-col gap-4 w-full h-full min-h-0">
       {/* Questions Navigation Box */}
       <div className="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-sm shadow-slate-100/50 flex-shrink-0">
         <p className="text-[12.5px] font-extrabold text-slate-800 tracking-tight mb-3">Questions</p>
-        <div className="flex gap-2 flex-wrap items-center mb-3.5">
-          {questions.map((q, idx) => {
-            const status = getQuestionStatus(q)
-            const isActive = idx === currentQuestionIdx
-            
-            return (
-              <button
-                key={q.id}
-                onClick={() => setCurrentQuestionIdx(idx)}
-                className={`w-8.5 h-8.5 rounded-full font-extrabold text-xs transition-all duration-150 flex items-center justify-center ${
-                  isActive
-                    ? 'border-2 border-[#2563eb] bg-blue-50/50 text-[#2563eb] ring-4 ring-blue-500/5 shadow-sm'
-                    : 'bg-slate-50 border border-slate-100 text-slate-500 hover:bg-slate-100 hover:text-slate-800 font-bold'
-                }`}
-                title={`Question ${idx + 1} - ${status}`}
-              >
-                {idx + 1}
-              </button>
-            )
-          })}
+        <div className="max-h-[82px] overflow-y-auto pr-1 mb-3.5 scrollbar-thin">
+          <div className="flex gap-2 flex-wrap items-center">
+            {questions.map((q, idx) => {
+              const status = getQuestionStatus(q)
+              const isActive = idx === currentQuestionIdx
+              
+              return (
+                <button
+                  key={q.id}
+                  onClick={() => setCurrentQuestionIdx(idx)}
+                  className={`w-8.5 h-8.5 rounded-full font-extrabold text-xs transition-all duration-150 flex items-center justify-center ${
+                    isActive
+                      ? 'border-2 border-[#2563eb] bg-blue-50/50 text-[#2563eb] ring-4 ring-blue-500/5 shadow-sm'
+                      : 'bg-slate-50 border border-slate-100 text-slate-500 hover:bg-slate-100 hover:text-slate-800 font-bold'
+                  }`}
+                  title={`Question ${idx + 1} - ${status}`}
+                >
+                  {idx + 1}
+                </button>
+              )
+            })}
+          </div>
         </div>
         
         {/* Navigation Legend */}
@@ -363,79 +452,116 @@ export default function ReviewClient({ examId }) {
           </div>
         </div>
 
-        {/* Question Text */}
-        <h2 className="text-[16.5px] font-extrabold text-slate-800 leading-snug mb-4 flex-shrink-0">
-          {currentQuestion.questionText}
-        </h2>
+        {/* Question Text & Embedded Images */}
+        {renderRichText(currentQuestion.questionText)}
 
-        {/* Options List - Independently Scrollable inside details if it overflows */}
+        {/* Question Image (Backward Compatibility) */}
+        {currentQuestion.questionImage && !currentQuestion.questionText?.includes(currentQuestion.questionImage) && (
+          <div className="my-3 max-w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-50 p-1 flex-shrink-0 flex items-center justify-center">
+            <img
+              key={currentQuestion.questionImage}
+              src={currentQuestion.questionImage}
+              alt="Question Visual"
+              className="max-h-[200px] w-auto object-contain rounded-lg"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          </div>
+        )}
+
+        {/* Options List / Descriptive Answer */}
         <div className="space-y-2.5 flex-1 overflow-y-auto pr-1">
-          {(() => {
-            let options = currentQuestion.options || []
-            if (typeof options === 'string') {
-              try {
-                options = JSON.parse(options)
-              } catch (e) {
-                console.error('Failed to parse options:', e)
-                return <p className="text-red-500 text-xs font-semibold">Error displaying options</p>
+          {currentQuestion.questionType === "text" ? (
+            <div className="space-y-3 bg-slate-50/60 p-4 rounded-xl border border-slate-200/60">
+              <p className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Your Submitted Answer:</p>
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200/50 text-slate-700 min-h-[120px] text-[13px] whitespace-pre-wrap leading-relaxed font-medium shadow-inner">
+                {currentAnswer?.descriptiveAnswer || <span className="text-slate-400 italic font-normal">No answer submitted for this question.</span>}
+              </div>
+            </div>
+          ) : (
+            (() => {
+              let options = currentQuestion.options || []
+              if (typeof options === 'string') {
+                try {
+                  options = JSON.parse(options)
+                } catch (e) {
+                  console.error('Failed to parse options:', e)
+                  return <p className="text-red-500 text-xs font-semibold">Error displaying options</p>
+                }
               }
-            }
-            
-            return options.map((optItem, optIdx) => {
-              const optText = typeof optItem === 'string' ? optItem : (optItem?.text || optItem?.label || '')
-              const optionId = typeof optItem === 'string' ? optIdx.toString() : (optItem?.id || optIdx.toString())
-              const isCorrect = optionId === correctOptionId
-              const isSelected = optionId === selectedOptionId
-              const isWrongSelection = isSelected && !isCorrect
+              
+              const correctIds = normalizeOptionSet(currentQuestion.correctOptionId)
+              const selectedIds = normalizeOptionSet(currentAnswer?.selectedOptionId)
 
-              return (
-                <div
-                  key={optIdx}
-                  className={`py-2.5 px-4 rounded-xl border transition-all duration-150 flex items-center gap-3.5 shadow-sm ${
-                    isCorrect
-                      ? 'border-[#10b981] bg-[#ecfdf5]/30 border-2'
-                      : isWrongSelection
-                      ? 'border-[#f43f5e] bg-[#fff1f2]/30 border-2'
-                      : 'border-slate-200/80 bg-white hover:bg-slate-50/50 hover:border-slate-300'
-                  }`}
-                >
-                  {/* Circle Letter Badge */}
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center font-extrabold text-xs flex-shrink-0 transition-colors ${
-                    isCorrect
-                      ? 'bg-[#10b981] text-white shadow-sm'
-                      : isWrongSelection
-                      ? 'bg-[#f43f5e] text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-500 border border-slate-200/50'
-                  }`}>
-                    {String.fromCharCode(65 + optIdx)}
+              return options.map((optItem, optIdx) => {
+                const optText = typeof optItem === 'string' ? optItem : (optItem?.text || optItem?.label || '')
+                const optionId = typeof optItem === 'string' ? optIdx.toString() : (optItem?.id || optIdx.toString())
+                const normalizedOptionId = normalizeOptionId(optionId)
+                const optImageUrl = typeof optItem === 'string' ? null : (optItem?.imageUrl || null)
+                
+                const isCorrect = currentQuestion.questionType === 'msq'
+                  ? correctIds.has(normalizedOptionId)
+                  : normalizedOptionId === correctOptionId
+                
+                const isSelected = currentQuestion.questionType === 'msq'
+                  ? selectedIds.has(normalizedOptionId)
+                  : normalizedOptionId === selectedOptionId
+                  
+                const isWrongSelection = isSelected && !isCorrect
+
+                return (
+                  <div
+                    key={optIdx}
+                    className={`py-2.5 px-4 rounded-xl border transition-all duration-150 flex items-center gap-3.5 shadow-sm ${
+                      isCorrect
+                        ? 'border-[#10b981] bg-[#ecfdf5]/30 border-2'
+                        : isWrongSelection
+                        ? 'border-[#f43f5e] bg-[#fff1f2]/30 border-2'
+                        : 'border-slate-200/80 bg-white hover:bg-slate-50/50 hover:border-slate-300'
+                    }`}
+                  >
+                    {/* Circle Letter Badge */}
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center font-extrabold text-xs flex-shrink-0 transition-colors ${
+                      isCorrect
+                        ? 'bg-[#10b981] text-white shadow-sm'
+                        : isWrongSelection
+                        ? 'bg-[#f43f5e] text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-500 border border-slate-200/50'
+                    }`}>
+                      {String.fromCharCode(65 + optIdx)}
+                    </div>
+                    
+                    {/* Text & Image */}
+                    <div className="flex-1 flex flex-col gap-2">
+                      {optText && renderRichText(optText)}
+                      {optImageUrl && (
+                        <div className="max-w-xl rounded overflow-hidden border border-slate-200 bg-slate-50 mt-1">
+                          <img
+                            key={optImageUrl}
+                            src={optImageUrl}
+                            alt={`Option ${optionId}`}
+                            className="max-h-[260px] object-contain w-auto"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Check/X Icon */}
+                    {isCorrect && (
+                      <div className="text-[#10b981] flex-shrink-0 ml-auto bg-[#ecfdf5] rounded-full p-0.5 border border-[#a7f3d0]">
+                        <Check className="w-3.5 h-3.5 text-[#10b981]" />
+                      </div>
+                    )}
+                    {isWrongSelection && (
+                      <div className="text-[#f43f5e] flex-shrink-0 ml-auto bg-[#fff1f2] rounded-full p-0.5 border border-[#fecdd3]">
+                        <XCircle className="w-3.5 h-3.5 fill-[#f43f5e] text-white" />
+                      </div>
+                    )}
                   </div>
-                  
-                  {/* Text */}
-                  <span className={`text-[13px] leading-relaxed flex-1 ${
-                    isCorrect 
-                      ? 'text-slate-800 font-extrabold' 
-                      : isWrongSelection 
-                      ? 'text-slate-800 font-extrabold' 
-                      : 'text-slate-600 font-bold'
-                  }`}>
-                    {optText}
-                  </span>
-                  
-                  {/* Check/X Icon */}
-                  {isCorrect && (
-                    <div className="text-[#10b981] flex-shrink-0 ml-auto bg-[#ecfdf5] rounded-full p-0.5 border border-[#a7f3d0]">
-                      <Check className="w-3.5 h-3.5 text-[#10b981]" />
-                    </div>
-                  )}
-                  {isWrongSelection && (
-                    <div className="text-[#f43f5e] flex-shrink-0 ml-auto bg-[#fff1f2] rounded-full p-0.5 border border-[#fecdd3]">
-                      <XCircle className="w-3.5 h-3.5 fill-[#f43f5e] text-white" />
-                    </div>
-                  )}
-                </div>
-              )
-            })
-          })()}
+                )
+              })
+            })()
+          )}
         </div>
 
         {/* Bottom Question Controls */}

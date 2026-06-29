@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, use } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useExamStore } from "@/lib/store"
 import { Button } from "@/components/ui/button"
@@ -35,20 +35,25 @@ import {
 export default function ExamAnalysisPage({ params }) {
   const { id } = use(params)
   const router = useRouter()
-  const { exams, attempts, questions, answers, fetchData, user, isHydrated, isAuthenticated } = useExamStore()
+  const { exams, attempts, questions, answers, fetchData, user, isHydrated, isAuthenticated, currentRole, currentUserCode } = useExamStore()
+  const searchParams = useSearchParams()
   const [rosterSearch, setRosterSearch] = useState("")
 
   useEffect(() => {
+    // Re-fetch when auth/role/code changes so teacher view stays dynamic
     if (isHydrated) {
       if (!isAuthenticated) {
         router.push("/login")
       } else if (user?.role === "student") {
         router.push("/student")
       } else {
-        fetchData()
+        // If a folderId or explicit teacher code is present in URL, include it
+        const folderId = searchParams?.get?.("folderId")
+        // fetchData will respect currentUserCode/currentRole from the store
+        fetchData(id)
       }
     }
-  }, [isHydrated, isAuthenticated, user, router, fetchData])
+  }, [isHydrated, isAuthenticated, user, router, fetchData, id, currentRole, currentUserCode, searchParams])
 
   if (!isHydrated || !isAuthenticated || !user) {
     return null

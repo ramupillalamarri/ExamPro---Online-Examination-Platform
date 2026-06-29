@@ -221,8 +221,16 @@ export default function StudentDashboardPage() {
                       if (attemptCount > 0) {
                         const completedAttempts = (attempts || []).filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
                         if (completedAttempts.length > 0) {
-                          completedAttempts.sort((a, b) => new Date(b.submittedAt || b.startedAt) - new Date(a.submittedAt || a.startedAt));
-                          router.push(`/exam/${exam.id}/review?attempt=${completedAttempts[0].id}`);
+                                // Prefer highest score; tie-breaker earliest submitted
+                                completedAttempts.sort((a, b) => {
+                                  const scoreA = a.score || 0
+                                  const scoreB = b.score || 0
+                                  if (scoreB !== scoreA) return scoreB - scoreA
+                                  const submittedA = new Date(a.submittedAt || a.startedAt || 0).getTime()
+                                  const submittedB = new Date(b.submittedAt || b.startedAt || 0).getTime()
+                                  return submittedA - submittedB
+                                })
+                                router.push(`/exam/${exam.id}/review?attempt=${completedAttempts[0].id}`);
                         }
                       }
                     }}
@@ -252,7 +260,14 @@ export default function StudentDashboardPage() {
                               e.stopPropagation();
                               const completedAttempts = (attempts || []).filter((a) => a.examId === exam.id && a.userId === user?.id && a.status === 'graded');
                               if (completedAttempts.length > 0) {
-                                completedAttempts.sort((a, b) => new Date(b.submittedAt || b.startedAt) - new Date(a.submittedAt || a.startedAt));
+                                completedAttempts.sort((a, b) => {
+                                  const scoreA = a.score || 0
+                                  const scoreB = b.score || 0
+                                  if (scoreB !== scoreA) return scoreB - scoreA
+                                  const submittedA = new Date(a.submittedAt || a.startedAt || 0).getTime()
+                                  const submittedB = new Date(b.submittedAt || b.startedAt || 0).getTime()
+                                  return submittedA - submittedB
+                                })
                                 router.push(`/exam/${exam.id}/review?attempt=${completedAttempts[0].id}`);
                               }
                             }}

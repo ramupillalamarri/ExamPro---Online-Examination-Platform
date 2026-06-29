@@ -131,7 +131,14 @@ export default function ReviewClient({ examId }) {
         }
         if (!activeAttempt) {
           const matchingAttempts = (json.attempts || []).filter((a) => a.examId === examId && a.userId === userId)
-          activeAttempt = matchingAttempts.sort((a,b) => new Date(b.startedAt) - new Date(a.startedAt))[0]
+          // Prefer the highest scoring graded attempt; fallback to the latest attempt if no scores available
+          const graded = matchingAttempts.filter((a) => a.status === 'graded' && typeof a.score === 'number')
+          if (graded.length) {
+            graded.sort((x, y) => (y.score || 0) - (x.score || 0) || new Date(y.startedAt) - new Date(x.startedAt))
+            activeAttempt = graded[0]
+          } else {
+            activeAttempt = matchingAttempts.sort((a,b) => new Date(b.startedAt) - new Date(a.startedAt))[0]
+          }
         }
         setAttempt(activeAttempt || null)
         const ans = (json.answers || []).filter((a) => a.attemptId === (activeAttempt?.id))
@@ -151,10 +158,32 @@ export default function ReviewClient({ examId }) {
 
   const getAnswerForQuestion = (qId) => answers.find((a) => a.questionId === qId)
 
+  const normalizeOptionId = (value) => {
+    return typeof value === 'string' ? value.trim().toLowerCase() : ''
+  }
+
+  const normalizeOptionSet = (value) => {
+    return new Set(
+      (typeof value === 'string' ? value : '')
+        .split(',')
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean)
+    )
+  }
+
   const getQuestionStatus = (q) => {
     const ans = getAnswerForQuestion(q.id)
     if (!ans) return 'skipped'
-    if (ans.selectedOptionId?.toString() === q.correctOptionId?.toString()) return 'correct'
+    if (q.questionType === 'msq') {
+      const correctSet = normalizeOptionSet(q.correctOptionId)
+      const selectedSet = normalizeOptionSet(ans.selectedOptionId)
+      if (correctSet.size !== selectedSet.size) return 'incorrect'
+      for (const item of correctSet) {
+        if (!selectedSet.has(item)) return 'incorrect'
+      }
+      return 'correct'
+    }
+    if (normalizeOptionId(ans.selectedOptionId) === normalizeOptionId(q.correctOptionId)) return 'correct'
     return 'incorrect'
   }
 
@@ -196,6 +225,7 @@ export default function ReviewClient({ examId }) {
           question: {
             id: currentQuestion.id,
             questionText: currentQuestion.questionText,
+            questionImage: currentQuestion.questionImage || null,
             options: options,
             correctOptionId: currentQuestion.correctOptionId,
             topic: currentQuestion.topic || "General",
@@ -257,8 +287,8 @@ export default function ReviewClient({ examId }) {
   
   const currentAnswer = getAnswerForQuestion(currentQuestion.id)
   const currentStatus = getQuestionStatus(currentQuestion)
-  const correctOptionId = currentQuestion.correctOptionId?.toString()
-  const selectedOptionId = currentAnswer?.selectedOptionId?.toString()
+  const correctOptionId = normalizeOptionId(currentQuestion.correctOptionId)
+  const selectedOptionId = normalizeOptionId(currentAnswer?.selectedOptionId)
 
   const leftColumnContent = (
     <div className="flex-1 overflow-auto bg-gray-50 h-full w-full min-h-0">
@@ -346,12 +376,20 @@ export default function ReviewClient({ examId }) {
                   return <p className="text-red-500">Error displaying options</p>
                 }
               }
+
+              const correctIds = normalizeOptionSet(currentQuestion.correctOptionId)
+              const selectedIds = normalizeOptionSet(currentAnswer?.selectedOptionId)
               
               return options.map((optItem, optIdx) => {
                 const optText = typeof optItem === 'string' ? optItem : (optItem?.text || optItem?.label || '')
                 const optionId = typeof optItem === 'string' ? optIdx.toString() : (optItem?.id || optIdx.toString())
-                const isCorrect = optionId === correctOptionId
-                const isSelected = optionId === selectedOptionId
+                const normalizedOptionId = normalizeOptionId(optionId)
+                const isCorrect = currentQuestion.questionType === 'msq'
+                  ? correctIds.has(normalizedOptionId)
+                  : normalizedOptionId === correctOptionId
+                const isSelected = currentQuestion.questionType === 'msq'
+                  ? selectedIds.has(normalizedOptionId)
+                  : normalizedOptionId === selectedOptionId
                 const isWrongSelection = isSelected && !isCorrect
 
                 return (

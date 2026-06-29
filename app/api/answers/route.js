@@ -7,28 +7,39 @@ const generateId = () => {
 
 export async function POST( req) {
   try {
-    const { id, attemptId, questionId, selectedOptionId } = await req.json();
-    if (!attemptId || !questionId || selectedOptionId === undefined) {
+    let { id, attemptId, questionId, selectedOptionId, descriptiveAnswer } = await req.json();
+    if (!attemptId || !questionId) {
       return NextResponse.json({ 
         error: 'Missing required answer fields',
-        details: { attemptId, questionId, selectedOptionId }
+        details: { attemptId, questionId }
       }, { status: 400 });
+    }
+
+    if (typeof selectedOptionId === 'string') {
+      selectedOptionId = selectedOptionId.trim()
+    }
+    if (typeof descriptiveAnswer === 'string') {
+      descriptiveAnswer = descriptiveAnswer.trim()
     }
 
     const answerId = id || generateId();
     const res = await query(`
-      INSERT INTO answers (id, attempt_id, question_id, selected_option_id)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO answers (id, attempt_id, question_id, selected_option_id, descriptive_answer)
+      VALUES ($1, $2, $3, $4, $5)
       ON CONFLICT (attempt_id, question_id) 
-      DO UPDATE SET selected_option_id = EXCLUDED.selected_option_id, updated_at = NOW()
+      DO UPDATE SET 
+        selected_option_id = EXCLUDED.selected_option_id, 
+        descriptive_answer = EXCLUDED.descriptive_answer, 
+        updated_at = NOW()
       RETURNING 
         id, 
         attempt_id as "attemptId", 
         question_id as "questionId", 
         selected_option_id as "selectedOptionId", 
+        descriptive_answer as "descriptiveAnswer", 
         is_correct as "isCorrect", 
         updated_at as "updatedAt"
-    `, [answerId, attemptId, questionId, selectedOptionId]);
+    `, [answerId, attemptId, questionId, selectedOptionId || null, descriptiveAnswer || null]);
 
     if (res.rows.length === 0) {
       throw new Error('Failed to save answer');

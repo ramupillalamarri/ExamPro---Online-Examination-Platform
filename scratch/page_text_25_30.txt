@@ -1,0 +1,89 @@
+=== Page 25 ===
+Question Number : 52  Question Id : 8946583860  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+Note: For this question, ambiguity is found in question/answer. Candidate will get full marks for this question if any of the correct
+options are chosen.
+Question Number : 53  Question Id : 8946583861  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+Question Number : 54  Question Id : 8946583862  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+
+==================================================
+=== Page 26 ===
+Question Number : 55  Question Id : 8946583863  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+Question Number : 56  Question Id : 8946583864  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+Question Number : 57  Question Id : 8946583865  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+
+==================================================
+=== Page 27 ===
+Question Number : 58  Question Id : 8946583866  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+Question Number : 59  Question Id : 8946583867  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+Question Number : 60  Question Id : 8946583868  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+
+==================================================
+=== Page 28 ===
+Question Number : 61  Question Id : 8946583869  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+Question Number : 62  Question Id : 8946583870  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+
+==================================================
+=== Page 29 ===
+Question Number : 63  Question Id : 8946583871  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+Question Number : 64  Question Id : 8946583872  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+Question Number : 65  Question Id : 8946583873  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Note: For this question, discrepancy is found in question/answer. Full Marks is being awarded to all
+candidates.
+Options :
+
+==================================================
+=== Page 30 ===
+Question Number : 66  Question Id : 8946583874  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+Question Number : 67  Question Id : 8946583875  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+Options :
+Question Number : 68  Question Id : 8946583876  Question Type : MCQ  Option Shuffling : Yes  Display Question Number : Yes
+Single Line Question Option : No  Option Orientation : Vertical
+Correct Marks : 1  Wrong Marks : 0
+
+==================================================

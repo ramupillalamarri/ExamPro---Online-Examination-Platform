@@ -15,6 +15,8 @@ export async function GET() {
         marks, 
         negative_marking as "negativeMarking",
         order_index as "orderIndex", 
+        question_image as "questionImage",
+        question_type as "questionType",
         created_at as "createdAt"
       FROM questions
       ORDER BY order_index ASC, created_at ASC
@@ -30,10 +32,10 @@ export async function GET() {
 export async function POST( req) {
   try {
     const data = await req.json();
-    let { id, examId, questionText, options, correctOptionId, subject, topic, marks, negativeMarking, orderIndex, userId } = data;
+    let { id, examId, questionText, options, correctOptionId, subject, topic, marks, negativeMarking, orderIndex, userId, questionImage, questionType } = data;
     
-    if (!examId || !questionText || !options || !correctOptionId) {
-      return NextResponse.json({ error: 'Missing required question fields' }, { status: 400 });
+    if (!examId || (!questionText && !questionImage) || !options || !correctOptionId) {
+      return NextResponse.json({ error: 'Missing required question fields (either question text or image must be provided)' }, { status: 400 });
     }
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -59,8 +61,8 @@ export async function POST( req) {
     }
 
     const res = await query(`
-      INSERT INTO questions (id, exam_id, question_text, options, correct_option_id, subject, topic, marks, negative_marking, order_index)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      INSERT INTO questions (id, exam_id, question_text, options, correct_option_id, subject, topic, marks, negative_marking, order_index, question_image, question_type)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING 
       id, 
       exam_id as "examId", 
@@ -72,18 +74,22 @@ export async function POST( req) {
       marks, 
       negative_marking as "negativeMarking",
       order_index as "orderIndex", 
+      question_image as "questionImage",
+      question_type as "questionType",
       created_at as "createdAt"
     `, [
       id,
       examId,
-      questionText,
+      questionText || '',
       JSON.stringify(options),
       correctOptionId,
       subject || '',
       topic || '',
       marks || 2,
       negativeMarking || 0,
-      orderIndex || 0
+      orderIndex || 0,
+      questionImage || null,
+      questionType || 'mcq'
     ]);
 
     // Update question count/updated_at in teacher's specific exam table
@@ -144,6 +150,8 @@ export async function PUT( req) {
       marks: 'marks',
       negativeMarking: 'negative_marking',
       orderIndex: 'order_index',
+      questionImage: 'question_image',
+      questionType: 'question_type',
     };
 
     Object.keys(updates).forEach((key) => {
@@ -181,6 +189,8 @@ export async function PUT( req) {
         marks, 
         negative_marking as "negativeMarking",
         order_index as "orderIndex", 
+        question_image as "questionImage",
+        question_type as "questionType",
         created_at as "createdAt"
     `;
 

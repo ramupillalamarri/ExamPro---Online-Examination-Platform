@@ -24,7 +24,7 @@ export default function NewExamPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const folderIdParam = searchParams.get("folderId")
-  const { folders, addExam, user, isHydrated, isAuthenticated, fetchData } = useExamStore()
+  const { addExam, user, isHydrated, isAuthenticated, fetchData } = useExamStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -42,26 +42,6 @@ export default function NewExamPage() {
   if (!isHydrated || !isAuthenticated || !user) {
     return null
   }
-
-  // Helper to get folder path string
-  const getFolderPath = (folderId, foldersList) => {
-    const path = [];
-    let current = foldersList.find(f => f.id === folderId);
-    const visited = new Set();
-    while (current && !visited.has(current.id)) {
-      visited.add(current.id);
-      path.unshift(current.name);
-      current = current.parentId ? foldersList.find(f => f.id === current.parentId) : null;
-    }
-    return path.join(" > ");
-  };
-
-  const folderOptions = (folders || [])
-    .map(folder => ({
-      id: folder.id,
-      path: getFolderPath(folder.id, folders)
-    }))
-    .sort((a, b) => a.path.localeCompare(b.path));
 
   const [formData, setFormData] = useState({
     title: "",
@@ -163,28 +143,7 @@ export default function NewExamPage() {
               />
             </div>
 
-            {/* Folder */}
-            <div className="space-y-2">
-              <Label htmlFor="folder">Folder</Label>
-              <Select
-                value={formData.folderId}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, folderId: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a folder (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No folder</SelectItem>
-                  {folderOptions.map((option) => (
-                    <SelectItem key={option.id} value={option.id}>
-                      {option.path}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+
 
             {/* Duration */}
             <div className="space-y-2">

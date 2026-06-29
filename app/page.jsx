@@ -84,10 +84,14 @@ function AnimatedCounter({ target, suffix = "" }) {
 }
 
 export default function LandingPage() {
-  const { isAuthenticated, user } = useExamStore()
+  const { isAuthenticated, user, currentUserCode, exams, folders } = useExamStore()
   const router = useRouter()
   const { scrollYProgress } = useScroll()
   const y = useTransform(scrollYProgress, [0, 1], [0, -50])
+
+  const accessCode = currentUserCode || '455770'
+  const [landingExamCount, setLandingExamCount] = useState(0)
+  const [landingFolderCount, setLandingFolderCount] = useState(0)
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -98,6 +102,35 @@ export default function LandingPage() {
       }
     }
   }, [isAuthenticated, user, router])
+
+  useEffect(() => {
+    if (isAuthenticated) return
+
+    const controller = new AbortController()
+    const fetchCounts = async () => {
+      try {
+        const summaryRes = await fetch('/api/summary', {
+          cache: 'no-store',
+          signal: controller.signal,
+        })
+        if (summaryRes.ok) {
+          const data = await summaryRes.json()
+          setLandingExamCount(typeof data.totalExams === 'number' ? data.totalExams : 0)
+          setLandingFolderCount(typeof data.totalFolders === 'number' ? data.totalFolders : 0)
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Failed to load landing summary counts:', err)
+        }
+      }
+    }
+
+    fetchCounts()
+    return () => controller.abort()
+  }, [isAuthenticated])
+
+  const examCount = landingExamCount
+  const folderCount = landingFolderCount
 
   const features = [
     {
@@ -362,13 +395,13 @@ export default function LandingPage() {
                       <div className="space-y-3">
                         <div className="flex gap-2">
                           <div className="flex-1 bg-muted rounded-lg px-3 py-1.5 text-sm font-mono text-left text-muted-foreground flex items-center">
-                            455770
+                            {accessCode}
                           </div>
                           <Badge className="bg-success text-success-foreground hover:bg-success border-0 flex items-center gap-1 text-[10px]">
                             ✓ Verified
                           </Badge>
                         </div>
-                        <p className="text-xs text-left text-success font-semibold">12 Exams & 3 Folders Unlocked</p>
+                        <p className="text-xs text-left text-success font-semibold">{examCount} Exams & {folderCount} Folders Unlocked</p>
                       </div>
                     </CardContent>
                   </Card>

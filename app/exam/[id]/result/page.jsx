@@ -101,9 +101,51 @@ export default function ResultPage({
 
   const percentage = ((attempt.score || 0) / (attempt.totalMarks || 1)) * 100
   const isPassing = percentage >= 60
-  const correctCount = answers.filter((a) => a.isCorrect).length
-  const incorrectCount = answers.filter((a) => a.selectedOptionId && !a.isCorrect).length
-  const unansweredCount = questions.length - answers.filter((a) => a.selectedOptionId).length
+
+  const normalizeOptionId = (value) => {
+    return typeof value === 'string' ? value.trim().toLowerCase() : ''
+  }
+
+  const normalizeOptionSet = (value) => {
+    return new Set(
+      (typeof value === 'string' ? value : '')
+        .split(',')
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean)
+    )
+  }
+
+  const isAnswerCorrect = (answer) => {
+    const question = questions.find((item) => item.id === answer.questionId)
+    if (!question || question.questionType === 'text') return false
+    if (question.questionType === 'msq') {
+      const correctSet = normalizeOptionSet(question.correctOptionId)
+      const selectedSet = normalizeOptionSet(answer.selectedOptionId)
+      if (correctSet.size !== selectedSet.size) return false
+      for (const optionId of correctSet) {
+        if (!selectedSet.has(optionId)) return false
+      }
+      return true
+    }
+    return normalizeOptionId(answer.selectedOptionId) === normalizeOptionId(question.correctOptionId)
+  }
+
+  const correctCount = answers.filter((a) => a.isCorrect === true || isAnswerCorrect(a)).length
+  const incorrectCount = answers.filter((a) => {
+    const q = questions.find((item) => item.id === a.questionId)
+    if (q?.questionType === 'text') {
+      return false
+    }
+    return a.selectedOptionId && !isAnswerCorrect(a)
+  }).length
+  const answeredCount = answers.filter((a) => {
+    const q = questions.find((item) => item.id === a.questionId)
+    if (q?.questionType === 'text') {
+      return !!a.descriptiveAnswer?.trim()
+    }
+    return !!a.selectedOptionId
+  }).length
+  const unansweredCount = questions.length - answeredCount
 
   return (
     <div className="min-h-screen bg-background">
