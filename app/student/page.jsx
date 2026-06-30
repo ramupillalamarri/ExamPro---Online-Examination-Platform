@@ -88,13 +88,37 @@ export default function StudentDashboard() {
     .sort((a, b) => new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime())
     .slice(0, 5)
 
-  // -- Dynamic Achievements Logic --
-  // 1. First Exam
+  const normalizeDateKey = (value) => {
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return null
+    const normalized = new Date(date)
+    normalized.setHours(0, 0, 0, 0)
+    return normalized.toISOString()
+  }
+
+  const activityDays = Array.from(
+    new Set(
+      completedAttempts
+        .map((a) => normalizeDateKey(a.submittedAt || a.startedAt))
+        .filter(Boolean)
+    )
+  )
+    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+
+  const todayKey = normalizeDateKey(new Date())
+  let currentStreak = 0
+  if (todayKey) {
+    const activitySet = new Set(activityDays)
+    let cursor = new Date(todayKey)
+    while (activitySet.has(cursor.toISOString())) {
+      currentStreak += 1
+      cursor.setDate(cursor.getDate() - 1)
+    }
+  }
+
+  const has7DayStreak = currentStreak >= 7
   const hasFirstExam = completedAttempts.length > 0
-  // 2. 7 Day Streak (Mock calculation: assuming if they have >= 3 completed attempts they've been active, otherwise no)
-  const has7DayStreak = completedAttempts.length >= 3 
-  // 3. Top 10 Rank
-  const hasTop10 = completedAttempts.some(a => (a.rank ?? 999) <= 10)
+  const hasTop10 = completedAttempts.some((a) => (a.rank ?? 999) <= 10)
   // 4. AI Master (Has taken an exam and reviewed AI feedback)
   const hasAIMaster = aiFeedback.some(f => userAttempts.some(a => a.id === f.attemptId))
   // 5. Perfect Score (100%)
@@ -240,8 +264,20 @@ export default function StudentDashboard() {
                 <Flame className="h-7 w-7 text-white" />
               </motion.div>
               <div>
-                <p className="font-bold text-lg text-foreground">{has7DayStreak ? "7 Day Streak!" : "3 Day Streak!"}</p>
-                <p className="text-sm text-muted-foreground">Keep learning to maintain your streak</p>
+                <p className="font-bold text-lg text-foreground">
+                  {currentStreak >= 7
+                    ? "7 Day Streak!"
+                    : currentStreak > 0
+                    ? `${currentStreak} Day Streak`
+                    : "Start your streak today"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {currentStreak >= 7
+                    ? "You have maintained a full week of learning!"
+                    : currentStreak > 0
+                    ? `Keep going for ${7 - currentStreak} more day${7 - currentStreak === 1 ? "" : "s"} to reach 7 days.`
+                    : "Complete an exam today to begin your streak."}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
@@ -252,7 +288,7 @@ export default function StudentDashboard() {
                   animate={{ scale: 1 }}
                   transition={{ delay: day * 0.1 }}
                   className={`h-8 w-8 shrink-0 rounded-lg flex items-center justify-center text-xs font-bold ${
-                    (has7DayStreak && day <= 7) || (!has7DayStreak && day <= 3) ? "bg-warning text-warning-foreground" : "bg-muted text-muted-foreground"
+                    day <= Math.min(currentStreak, 7) ? "bg-warning text-warning-foreground" : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {day}

@@ -171,6 +171,7 @@ export default function StudentExamsPage() {
       canAttempt: stats.canAttempt,
       maxAllowed: stats.maxAllowed,
       bestScore: stats.bestScore,
+      totalMarks: stats.totalMarks,
     }
   }
 
@@ -687,7 +688,7 @@ function ExamGridItem({ exam, getAttemptStatus, attempts, user, router, handleSt
                 Attempted {attemptCount} time{attemptCount > 1 ? "s" : ""}
                 {bestScore !== null && (
                   <span className="text-success font-bold ml-1">
-                    - Best: {bestScore}/{exam.questionCount ? exam.questionCount * 2 : 0}
+                    - Best: {bestScore}/{exam.totalMarks || (exam.questionCount ? exam.questionCount * 2 : 0)}
                   </span>
                 )}
               </p>

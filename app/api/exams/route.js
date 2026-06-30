@@ -48,11 +48,12 @@ export async function GET(req) {
         e.updated_at as "updatedAt",
         f.name as "folderName",
         COALESCE(q.q_count, 0)::integer as "questionCount",
+        COALESCE(q.q_total_marks, 0)::integer as "totalMarks",
         COALESCE(a.a_count, 0)::integer as "attemptCount"
       FROM exams_${safeCode} e
       LEFT JOIN folders_${safeCode} f ON e.folder_id = f.id
       LEFT JOIN (
-        SELECT exam_id, COUNT(*) as q_count
+        SELECT exam_id, COUNT(*) as q_count, SUM(COALESCE(marks, 2))::integer as q_total_marks
         FROM questions 
         GROUP BY exam_id
       ) q ON e.id = q.exam_id
