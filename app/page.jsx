@@ -204,15 +204,11 @@ export default function LandingPage() {
               transition={{ type: "spring", stiffness: 400}}
             >
               <motion.div
-                className="h-10 w-10 rounded-xl flex items-center justify-center shadow-lg shadow-primary/30"
+                className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-glow-1 flex items-center justify-center shadow-lg shadow-primary/30"
                 animate={{ rotate: [0, 8, 0, -8, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
               >
-                <img 
-                  src="/logo.svg" 
-                  alt="ExamPro Logo" 
-                  className="h-10 w-10 object-contain"
-                />
+                <GraduationCap className="h-5 w-5 text-primary-foreground" />
               </motion.div>
               <span className="font-bold text-xl gradient-text animate-text-gradient bg-gradient-to-r from-primary via-accent to-primary">ExamPro</span>
             </motion.div>
