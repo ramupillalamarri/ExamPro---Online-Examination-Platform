@@ -251,9 +251,13 @@ export function DashboardLayout({ children }) {
             <div className="h-16 flex items-center gap-3 px-6 border-b border-sidebar-border relative">
               <motion.div
                 whileHover={{ scale: 1.05, rotate: 5 }}
-                className="h-10 w-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-glow-1 flex items-center justify-center shadow-lg shadow-sidebar-primary/30"
+                className="h-10 w-10 rounded-xl flex items-center justify-center shadow-lg shadow-sidebar-primary/30"
               >
-                <GraduationCap className="h-5 w-5 text-white" />
+                <img 
+                  src="/logo.svg" 
+                  alt="ExamPro Logo" 
+                  className="h-10 w-10 object-contain"
+                />
               </motion.div>
               <div>
                 <span className="font-bold text-lg text-sidebar-foreground">
