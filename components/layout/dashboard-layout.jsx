@@ -89,24 +89,29 @@ export function DashboardLayout({ children }) {
     setSidebarOpen(false)
   }, [pathname])
 
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Check auth and role access after all hooks
   useEffect(() => {
-    if (isHydrated) {
+    if (isHydrated && mounted) {
       if (!isAuthenticated) {
         router.push("/login")
       } else {
         // Enforce role-based path restrictions
-        if (pathname.startsWith("/admin") && user?.role === "student") {
+        if (pathname.startsWith("/admin") && currentRole === "student") {
           router.push("/student")
-        } else if ((pathname.startsWith("/student") || pathname.startsWith("/attempts")) && (user?.role === "teacher" || user?.role === "admin")) {
+        } else if ((pathname.startsWith("/student") || pathname.startsWith("/attempts")) && (currentRole === "teacher" || currentRole === "admin")) {
           router.push("/admin")
         }
       }
     }
-  }, [isHydrated, isAuthenticated, user, pathname, router])
+  }, [isHydrated, mounted, isAuthenticated, currentRole, pathname, router])
 
   // Return early only AFTER all hooks are defined
-  if (!isHydrated || !isAuthenticated || !user) {
+  if (!mounted || !isHydrated || !isAuthenticated || !user) {
     return null
   }
 

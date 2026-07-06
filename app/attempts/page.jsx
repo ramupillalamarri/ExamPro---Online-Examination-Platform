@@ -136,17 +136,22 @@ export default function AttemptsPage() {
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false)
   const [leaderboardError, setLeaderboardError] = useState("")
 
+  const [mounted, setMounted] = useState(false)
   useEffect(() => {
-    if (isHydrated && !isAuthenticated) {
-      router.push("/login")
-    }
-  }, [isHydrated, isAuthenticated, router])
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
-    if (isHydrated && user) {
+    if (isHydrated && mounted && !isAuthenticated) {
+      router.push("/login")
+    }
+  }, [isHydrated, mounted, isAuthenticated, router])
+
+  useEffect(() => {
+    if (isHydrated && mounted && user) {
       fetchData()
     }
-  }, [isHydrated, user?.id, fetchData])
+  }, [isHydrated, mounted, user?.id, fetchData])
 
   // Parse query params for active tab on mount
   useEffect(() => {
@@ -242,7 +247,7 @@ export default function AttemptsPage() {
       : 0
   }, [userAttempts])
 
-  if (!isHydrated || !isAuthenticated || !user) {
+  if (!mounted || !isHydrated || !isAuthenticated || !user) {
     return null
   }
 

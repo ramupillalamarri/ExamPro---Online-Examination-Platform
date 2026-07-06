@@ -299,7 +299,7 @@ export default function StudentExamsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Subjects</SelectItem>
-              {(folders || []).map((folder) => (
+              {(folders || []).filter(f => f && f.id).map((folder) => (
                 <SelectItem key={folder.id} value={folder.id}>
                   {folder.name}
                 </SelectItem>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
@@ -52,9 +52,14 @@ export default function StudentDashboard() {
   const router = useRouter()
   const { isHydrated, isAuthenticated, user, exams, folders, attempts, answers, aiFeedback, fetchData } = useExamStore()
 
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Define useEffect to handle auth redirect & fetch fresh attempts/rankings
   useEffect(() => {
-    if (isHydrated) {
+    if (isHydrated && mounted) {
       if (!isAuthenticated) {
         router.push("/login")
       } else if (user?.role === "teacher" || user?.role === "admin") {
@@ -63,10 +68,10 @@ export default function StudentDashboard() {
         fetchData()
       }
     }
-  }, [isHydrated, isAuthenticated, user, router, fetchData])
+  }, [isHydrated, mounted, isAuthenticated, user, router, fetchData])
 
   // Return null to prevent rendering while loading/unauthenticated
-  if (!isHydrated || !isAuthenticated || !user) {
+  if (!mounted || !isHydrated || !isAuthenticated || !user) {
     return null
   }
 
