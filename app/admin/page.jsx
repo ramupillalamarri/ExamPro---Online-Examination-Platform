@@ -150,31 +150,83 @@ export default function AdminDashboard() {
     },
   ]
 
-  // Chart data
+  // Chart data - Attempts per Exam (Top 5)
   const examAttemptData = (exams || [])
     .filter((e) => e.isPublished)
-    .slice(0, 5)
     .map((exam) => ({
       name: exam.title.length > 15 ? exam.title.substring(0, 15) + "..." : exam.title,
-      attempts: exam.attemptCount || 0,
+      attempts: Number(exam.attemptCount || 0),
     }))
+    .sort((a, b) => b.attempts - a.attempts)
+    .slice(0, 5)
+
+  // Graded attempts score distribution buckets
+  const buckets = {
+    range0_40: 0,
+    range40_60: 0,
+    range60_80: 0,
+    range80_100: 0,
+  }
+
+  gradedAttempts.forEach((a) => {
+    const total = a.totalMarks || 1
+    const pct = ((a.score || 0) / total) * 100
+    if (pct < 40) {
+      buckets.range0_40++
+    } else if (pct < 60) {
+      buckets.range40_60++
+    } else if (pct < 80) {
+      buckets.range60_80++
+    } else {
+      buckets.range80_100++
+    }
+  })
 
   const scoreDistribution = [
-    { name: "0-40%", value: 2, color: "var(--destructive)" },
-    { name: "40-60%", value: 5, color: "var(--warning)" },
-    { name: "60-80%", value: 8, color: "var(--accent)" },
-    { name: "80-100%", value: 4, color: "var(--success)" },
+    { name: "0-40%", value: buckets.range0_40, color: "#ef4444" },
+    { name: "40-60%", value: buckets.range40_60, color: "#f59e0b" },
+    { name: "60-80%", value: buckets.range60_80, color: "#3b82f6" },
+    { name: "80-100%", value: buckets.range80_100, color: "#10b981" },
   ]
 
-  const weeklyData = [
-    { day: "Mon", attempts: 12, score: 65 },
-    { day: "Tue", attempts: 19, score: 72 },
-    { day: "Wed", attempts: 15, score: 68 },
-    { day: "Thu", attempts: 25, score: 78 },
-    { day: "Fri", attempts: 22, score: 75 },
-    { day: "Sat", attempts: 8, score: 82 },
-    { day: "Sun", attempts: 5, score: 70 },
-  ]
+  // Weekly activity metrics
+  const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  const dayStats = {
+    Mon: { count: 0, sumScorePct: 0, gradedCount: 0 },
+    Tue: { count: 0, sumScorePct: 0, gradedCount: 0 },
+    Wed: { count: 0, sumScorePct: 0, gradedCount: 0 },
+    Thu: { count: 0, sumScorePct: 0, gradedCount: 0 },
+    Fri: { count: 0, sumScorePct: 0, gradedCount: 0 },
+    Sat: { count: 0, sumScorePct: 0, gradedCount: 0 },
+    Sun: { count: 0, sumScorePct: 0, gradedCount: 0 },
+  }
+
+  const allAttempts = attempts || []
+  allAttempts.forEach((a) => {
+    const dateStr = a.startedAt || a.submittedAt || a.createdAt
+    if (!dateStr) return
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return
+    const dayName = daysOfWeek[date.getDay()]
+    if (dayStats[dayName]) {
+      dayStats[dayName].count++
+      if (a.status === "graded") {
+        const pct = ((a.score || 0) / (a.totalMarks || 1)) * 100
+        dayStats[dayName].sumScorePct += pct
+        dayStats[dayName].gradedCount++
+      }
+    }
+  })
+
+  const weeklyData = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => {
+    const stats = dayStats[day]
+    const avgScore = stats.gradedCount > 0 ? Math.round(stats.sumScorePct / stats.gradedCount) : 0
+    return {
+      day,
+      attempts: stats.count,
+      score: avgScore,
+    }
+  })
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 min-h-screen">
@@ -333,7 +385,7 @@ export default function AdminDashboard() {
                           borderRadius: "var(--radius)",
                         }}
                       />
-                      <Bar dataKey="attempts" fill="hsl(var(--primary))" radius={[0, 8, 8, 0]} />
+                      <Bar dataKey="attempts" fill="#6366f1" radius={[0, 8, 8, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -369,34 +421,50 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-[280px] flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={scoreDistribution}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={90}
-                      paddingAngle={4}
-                      dataKey="value"
-                      label={({ name, percent }) =>
-                        `${name}`
-                      }
-                      labelLine={false}
-                    >
-                      {scoreDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "var(--radius)",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                {gradedAttempts.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={scoreDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={90}
+                        paddingAngle={4}
+                        dataKey="value"
+                        label={({ name, value }) =>
+                          value > 0 ? `${name} (${value})` : null
+                        }
+                        labelLine={false}
+                      >
+                        {scoreDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "var(--radius)",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center">
+                      <motion.div
+                        animate={{ scale: [1, 1.05, 1] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4 mx-auto"
+                      >
+                        <TrendingUp className="h-8 w-8 text-muted-foreground" />
+                      </motion.div>
+                      <p className="text-muted-foreground">No graded attempts yet</p>
+                      <p className="text-sm text-muted-foreground/70">Grade student attempts to see score trends</p>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex flex-wrap justify-center gap-4 mt-4">
                 {scoreDistribution.map((item) => (
@@ -438,46 +506,62 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={weeklyData}>
-                    <defs>
-                      <linearGradient id="colorAttempts" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
-                    <XAxis dataKey="day" className="text-xs fill-muted-foreground" axisLine={false} tickLine={false} />
-                    <YAxis className="text-xs fill-muted-foreground" axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "var(--radius)",
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="attempts"
-                      stroke="hsl(var(--primary))"
-                      fillOpacity={1}
-                      fill="url(#colorAttempts)"
-                      strokeWidth={2}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="score"
-                      stroke="hsl(var(--accent))"
-                      fillOpacity={1}
-                      fill="url(#colorScore)"
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {attempts && attempts.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={weeklyData}>
+                      <defs>
+                        <linearGradient id="colorAttempts" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                      <XAxis dataKey="day" className="text-xs fill-muted-foreground" axisLine={false} tickLine={false} />
+                      <YAxis className="text-xs fill-muted-foreground" axisLine={false} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "var(--radius)",
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="attempts"
+                        stroke="hsl(var(--primary))"
+                        fillOpacity={1}
+                        fill="url(#colorAttempts)"
+                        strokeWidth={2}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="score"
+                        stroke="hsl(var(--accent))"
+                        fillOpacity={1}
+                        fill="url(#colorScore)"
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center">
+                      <motion.div
+                        animate={{ rotate: [0, 5, -5, 0] }}
+                        transition={{ duration: 4, repeat: Infinity }}
+                        className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4 mx-auto"
+                      >
+                        <ClipboardList className="h-8 w-8 text-muted-foreground" />
+                      </motion.div>
+                      <p className="text-muted-foreground">No attempts recorded this week</p>
+                      <p className="text-sm text-muted-foreground/70">Student attempt activity will be plotted here</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
