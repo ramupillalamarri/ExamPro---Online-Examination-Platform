@@ -53,7 +53,24 @@ import {
   Cell,
   Area,
   AreaChart,
+  LabelList,
 } from "recharts"
+
+const BarChartTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload
+    return (
+      <div className="bg-card/95 backdrop-blur-md border border-border px-3.5 py-2.5 rounded-2xl shadow-2xl text-xs space-y-1">
+        <p className="font-extrabold text-foreground">{data.fullName || data.name}</p>
+        <p className="text-muted-foreground flex items-center gap-1.5 font-medium">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#6366f1]" />
+          Total Attempts: <span className="font-black text-foreground">{data.attempts}</span>
+        </p>
+      </div>
+    )
+  }
+  return null
+}
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -155,6 +172,7 @@ export default function AdminDashboard() {
     .filter((e) => e.isPublished)
     .map((exam) => ({
       name: exam.title.length > 15 ? exam.title.substring(0, 15) + "..." : exam.title,
+      fullName: exam.title,
       attempts: Number(exam.attemptCount || 0),
     }))
     .sort((a, b) => b.attempts - a.attempts)
@@ -378,14 +396,10 @@ export default function AdminDashboard() {
                         axisLine={false}
                         tickLine={false}
                       />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "var(--radius)",
-                        }}
-                      />
-                      <Bar dataKey="attempts" fill="#6366f1" radius={[0, 8, 8, 0]} />
+                      <Tooltip content={<BarChartTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.05)' }} />
+                      <Bar dataKey="attempts" fill="#6366f1" radius={[0, 8, 8, 0]}>
+                        <LabelList dataKey="attempts" position="insideRight" offset={12} fill="#ffffff" className="text-[10px] font-black" />
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
