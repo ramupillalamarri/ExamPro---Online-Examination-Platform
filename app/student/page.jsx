@@ -121,17 +121,7 @@ export default function StudentDashboard() {
     }
   }
 
-  const has7DayStreak = currentStreak >= 7
-  const hasFirstExam = completedAttempts.length > 0
-  const hasTop10 = completedAttempts.some((a) => (a.rank ?? 999) <= 10)
-  // 4. AI Master (Has taken an exam and reviewed AI feedback)
-  const hasAIMaster = aiFeedback.some(f => userAttempts.some(a => a.id === f.attemptId))
-  // 5. Perfect Score (100%)
-  const hasPerfectScore = completedAttempts.some(a => ((a.score || 0) / (a.totalMarks || 1)) === 1)
-  // 6. Speed Demon (Completed in less than 50% of total time - mock logic: random 20% chance if they have > 0 attempts)
-  const hasSpeedDemon = completedAttempts.some(a => (a.score || 0) > 0 && Math.random() > 0.8)
 
-  const unlockedCount = [hasFirstExam, has7DayStreak, hasTop10, hasAIMaster, hasPerfectScore, hasSpeedDemon].filter(Boolean).length
 
   // -- Detailed Performance Breakdown --
   let totalCorrect = 0;
@@ -737,74 +727,6 @@ export default function StudentDashboard() {
         </motion.div>
       </div>
 
-      {/* Achievements Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="relative z-10"
-      >
-        <Card className="border-border/50 bg-card/80 backdrop-blur-xl overflow-hidden">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <motion.div
-                  className="h-8 w-8 rounded-lg bg-gradient-to-br from-warning/20 to-glow-5/20 flex items-center justify-center shrink-0"
-                  animate={{ rotate: [0, 5, 0, -5, 0] }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                >
-                  <Award className="h-4 w-4 text-warning" />
-                </motion.div>
-                <div>
-                  <CardTitle className="text-lg">Achievements</CardTitle>
-                  <CardDescription>Your badges and milestones computed dynamically</CardDescription>
-                </div>
-              </div>
-              <Badge className="bg-primary/10 text-primary border-primary/20 whitespace-nowrap">
-                {unlockedCount}/6 Unlocked
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-              {[
-                { icon: Star, label: "First Exam", unlocked: hasFirstExam, color: "from-warning to-glow-5" },
-                { icon: Flame, label: "7 Day Streak", unlocked: has7DayStreak, color: "from-destructive to-glow-3" },
-                { icon: Trophy, label: "Top 10", unlocked: hasTop10, color: "from-primary to-glow-1" },
-                { icon: Brain, label: "AI Master", unlocked: hasAIMaster, color: "from-accent to-glow-2" },
-                { icon: Target, label: "Perfect Score", unlocked: hasPerfectScore, color: "from-success to-glow-4" },
-                { icon: Rocket, label: "Speed Demon", unlocked: hasSpeedDemon, color: "from-chart-2 to-glow-4" },
-              ].map((achievement, index) => (
-                <motion.div
-                  key={achievement.label}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ scale: 1.1, y: -5 }}
-                  className="text-center"
-                >
-                  <motion.div
-                    className={`h-14 w-14 mx-auto rounded-2xl flex items-center justify-center mb-2 ${
-                      achievement.unlocked
-                        ? `bg-gradient-to-br ${achievement.color} shadow-lg`
-                        : "bg-muted/50 opacity-40"
-                    }`}
-                    animate={achievement.unlocked ? { 
-                      boxShadow: ["0 0 20px rgba(var(--primary), 0.2)", "0 0 30px rgba(var(--primary), 0.4)", "0 0 20px rgba(var(--primary), 0.2)"]
-                    } : {}}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <achievement.icon className={`h-6 w-6 ${achievement.unlocked ? "text-white" : "text-muted-foreground"}`} />
-                  </motion.div>
-                  <p className={`text-[11px] sm:text-xs font-medium ${achievement.unlocked ? "text-foreground" : "text-muted-foreground"}`}>
-                    {achievement.label}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
     </div>
   )
 }
