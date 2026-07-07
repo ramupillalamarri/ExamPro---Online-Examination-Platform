@@ -55,20 +55,10 @@ export default function LoginPage() {
     }
 
     const scriptId = "google-identity-service-script"
-    if (window.__examproGoogleInitialized) {
-      return
-    }
 
-    const script = document.createElement("script")
-    script.id = scriptId
-    script.src = "https://accounts.google.com/gsi/client"
-    script.async = true
-    script.defer = true
-    document.body.appendChild(script)
-
-    script.onload = () => {
+    const initGoogle = () => {
       try {
-        if (window.google && !window.__examproGoogleInitialized) {
+        if (window.google) {
           window.google.accounts.id.initialize({
             client_id: GOOGLE_CLIENT_ID,
             callback: handleGoogleLogin,
@@ -80,6 +70,22 @@ export default function LoginPage() {
         console.error("Failed to initialize Google login:", err)
         setIsGoogleEnabled(false)
       }
+    }
+
+    if (window.__examproGoogleInitialized || window.google) {
+      initGoogle()
+      return
+    }
+
+    const script = document.createElement("script")
+    script.id = scriptId
+    script.src = "https://accounts.google.com/gsi/client"
+    script.async = true
+    script.defer = true
+    document.body.appendChild(script)
+
+    script.onload = () => {
+      initGoogle()
     }
 
     script.onerror = () => {
@@ -98,7 +104,8 @@ export default function LoginPage() {
   useEffect(() => {
     if (isGoogleEnabled && window.google && typeof window !== "undefined") {
       const btn = document.getElementById("google-login-btn")
-      if (btn && btn.innerHTML === "") {
+      if (btn) {
+        btn.innerHTML = "" // Clean container to avoid duplicate render warnings
         window.google.accounts.id.renderButton(btn, {
           theme: "filled_blue",
           size: "large",
