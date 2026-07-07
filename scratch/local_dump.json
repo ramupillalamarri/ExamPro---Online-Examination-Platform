@@ -1,0 +1,466 @@
+{
+  "folders": {
+    "columns": [
+      "id",
+      "name",
+      "parent_id",
+      "created_by",
+      "created_at"
+    ],
+    "rows": []
+  },
+  "exams": {
+    "columns": [
+      "id",
+      "title",
+      "description",
+      "duration_minutes",
+      "max_attempts",
+      "folder_id",
+      "is_published",
+      "negative_marking",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "rows": []
+  },
+  "questions": {
+    "columns": [
+      "id",
+      "exam_id",
+      "question_text",
+      "options",
+      "correct_option_id",
+      "subject",
+      "topic",
+      "marks",
+      "negative_marking",
+      "order_index",
+      "question_image",
+      "question_type",
+      "created_at"
+    ],
+    "rows": [
+      {
+        "id": "dlthaod3dvj",
+        "exam_id": "nyxxm5q4v8f",
+        "question_text": "9 + 8",
+        "options": [
+          {
+            "id": "a",
+            "text": "15",
+            "imageUrl": null
+          },
+          {
+            "id": "b",
+            "text": "16",
+            "imageUrl": null
+          },
+          {
+            "id": "c",
+            "text": "17",
+            "imageUrl": null
+          },
+          {
+            "id": "d",
+            "text": "18",
+            "imageUrl": null
+          }
+        ],
+        "correct_option_id": "c",
+        "subject": "",
+        "topic": "",
+        "marks": 2,
+        "negative_marking": "0",
+        "order_index": 0,
+        "question_image": null,
+        "question_type": "mcq",
+        "created_at": "2026-07-06T09:28:07.345Z"
+      }
+    ]
+  },
+  "attempts": {
+    "columns": [
+      "id",
+      "exam_id",
+      "user_id",
+      "status",
+      "started_at",
+      "submitted_at",
+      "score",
+      "total_marks",
+      "rank",
+      "warnings",
+      "created_at"
+    ],
+    "rows": [
+      {
+        "id": "ny26amqpe1a",
+        "exam_id": "nyxxm5q4v8f",
+        "user_id": "user-1783453527821-f9dz",
+        "status": "graded",
+        "started_at": "2026-07-07T19:45:48.835Z",
+        "submitted_at": "2026-07-07T19:45:57.704Z",
+        "score": "2",
+        "total_marks": 2,
+        "rank": 1,
+        "warnings": 0,
+        "created_at": "2026-07-07T19:45:48.835Z"
+      },
+      {
+        "id": "7wjpqglora9",
+        "exam_id": "nyxxm5q4v8f",
+        "user_id": "user-1783451207693-bdle",
+        "status": "graded",
+        "started_at": "2026-07-07T19:08:14.663Z",
+        "submitted_at": "2026-07-07T19:08:22.520Z",
+        "score": "0",
+        "total_marks": 2,
+        "rank": 2,
+        "warnings": 0,
+        "created_at": "2026-07-07T19:08:14.663Z"
+      },
+      {
+        "id": "57o6fz679qn",
+        "exam_id": "nyxxm5q4v8f",
+        "user_id": "user-1783453970779-ajzv",
+        "status": "graded",
+        "started_at": "2026-07-07T19:53:03.639Z",
+        "submitted_at": "2026-07-07T19:53:23.735Z",
+        "score": "0",
+        "total_marks": 2,
+        "rank": 3,
+        "warnings": 4,
+        "created_at": "2026-07-07T19:53:03.639Z"
+      }
+    ]
+  },
+  "users": {
+    "columns": [
+      "id",
+      "email",
+      "full_name",
+      "avatar_url",
+      "user_code",
+      "role",
+      "age",
+      "phone_number",
+      "address",
+      "college",
+      "major",
+      "graduation_year",
+      "bio",
+      "created_at"
+    ],
+    "rows": [
+      {
+        "id": "admin-1",
+        "email": "ramupillalamarri66@gmail.com",
+        "full_name": "Ramu Pillalamarri",
+        "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocLIaInCe_zc9I1MbUn9uxFFn1l-U_7rJJuAVTkzkSpP5VtFQg=s96-c",
+        "user_code": "455770",
+        "role": "teacher",
+        "age": 21,
+        "phone_number": "9515486925",
+        "address": "9-1-307, Bagathnagar, karimnagar",
+        "college": "Osmania university",
+        "major": "Computer Science",
+        "graduation_year": 2027,
+        "bio": "loves tejaa",
+        "created_at": "2026-07-06T09:23:06.569Z"
+      },
+      {
+        "id": "student-1",
+        "email": "student@exampro.com",
+        "full_name": "John Student (Dev)",
+        "avatar_url": "",
+        "user_code": "654321",
+        "role": "teacher",
+        "age": null,
+        "phone_number": null,
+        "address": null,
+        "college": null,
+        "major": null,
+        "graduation_year": null,
+        "bio": null,
+        "created_at": "2026-07-06T09:23:06.569Z"
+      },
+      {
+        "id": "user-1783453527821-f9dz",
+        "email": "ramupillalmarri56@gmail.com",
+        "full_name": "Ramu Pillalamarri",
+        "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocLl12mhvk8_qxRclHv96ARxVDAls_UlDXq_H2sVP_rZi4HBeQ=s96-c",
+        "user_code": "523216",
+        "role": "student",
+        "age": null,
+        "phone_number": null,
+        "address": null,
+        "college": null,
+        "major": null,
+        "graduation_year": null,
+        "bio": null,
+        "created_at": "2026-07-07T19:45:27.822Z"
+      },
+      {
+        "id": "user-1783451207693-bdle",
+        "email": "tejaswiprajapati00@gmail.com",
+        "full_name": "Tejaswi Prajapati",
+        "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocL5R1-KDSzg8Bns7dC1MyvT4fPFqRYz9ADCh_Rz7O5KmU6Ijw=s96-c",
+        "user_code": "324732",
+        "role": "teacher",
+        "age": null,
+        "phone_number": null,
+        "address": null,
+        "college": null,
+        "major": null,
+        "graduation_year": null,
+        "bio": null,
+        "created_at": "2026-07-07T19:06:47.694Z"
+      },
+      {
+        "id": "user-1783453970779-ajzv",
+        "email": "pillalamarriramu66@gmail.com",
+        "full_name": "Pillalamarri Ramu",
+        "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocI3Tm1ljDMPXQoJgqYPemjBW_SpLJUwv_upNzqXiYfQZBOAww=s96-c",
+        "user_code": "393417",
+        "role": "teacher",
+        "age": null,
+        "phone_number": null,
+        "address": null,
+        "college": null,
+        "major": null,
+        "graduation_year": null,
+        "bio": null,
+        "created_at": "2026-07-07T19:52:50.780Z"
+      }
+    ]
+  },
+  "answers": {
+    "columns": [
+      "id",
+      "attempt_id",
+      "question_id",
+      "selected_option_id",
+      "descriptive_answer",
+      "is_correct",
+      "updated_at"
+    ],
+    "rows": [
+      {
+        "id": "2b2ezsyt9zn",
+        "attempt_id": "7wjpqglora9",
+        "question_id": "dlthaod3dvj",
+        "selected_option_id": "b",
+        "descriptive_answer": null,
+        "is_correct": false,
+        "updated_at": "2026-07-07T19:08:18.350Z"
+      },
+      {
+        "id": "ugt3fa3thbf",
+        "attempt_id": "ny26amqpe1a",
+        "question_id": "dlthaod3dvj",
+        "selected_option_id": "c",
+        "descriptive_answer": null,
+        "is_correct": true,
+        "updated_at": "2026-07-07T19:45:54.456Z"
+      }
+    ]
+  },
+  "ai_feedback": {
+    "columns": [
+      "id",
+      "attempt_id",
+      "mistake_analysis",
+      "weak_topics",
+      "created_at"
+    ],
+    "rows": [
+      {
+        "id": "uismo3t7ods",
+        "attempt_id": "7wjpqglora9",
+        "mistake_analysis": [
+          {
+            "questionId": "dlthaod3dvj",
+            "explanation": "You selected \"16\" but the correct answer is \"17\".  Review the concept and practice similar problems."
+          }
+        ],
+        "weak_topics": [
+          {
+            "topic": "General",
+            "subject": "General",
+            "questionCount": 1,
+            "recommendation": "Focus on practicing more General problems to strengthen your understanding."
+          }
+        ],
+        "created_at": "2026-07-07T19:08:22.538Z"
+      },
+      {
+        "id": "lv4rdon08a",
+        "attempt_id": "ny26amqpe1a",
+        "mistake_analysis": [],
+        "weak_topics": [],
+        "created_at": "2026-07-07T19:45:57.711Z"
+      },
+      {
+        "id": "vjx9ztvztu",
+        "attempt_id": "57o6fz679qn",
+        "mistake_analysis": [],
+        "weak_topics": [],
+        "created_at": "2026-07-07T19:53:23.743Z"
+      }
+    ]
+  },
+  "user_access": {
+    "columns": [
+      "id",
+      "user_id",
+      "accessed_user_id",
+      "user_code",
+      "created_at"
+    ],
+    "rows": [
+      {
+        "id": "8ovpjk94k05",
+        "user_id": "user-1783453527821-f9dz",
+        "accessed_user_id": "user-1783453970779-ajzv",
+        "user_code": "393417",
+        "created_at": "2026-07-07T19:59:05.512Z"
+      }
+    ]
+  },
+  "folders_455770": {
+    "columns": [
+      "id",
+      "name",
+      "parent_id",
+      "created_by",
+      "created_at"
+    ],
+    "rows": [
+      {
+        "id": "xrq30ifhdc",
+        "name": "math",
+        "parent_id": null,
+        "created_by": "admin-1",
+        "created_at": "2026-07-06T09:27:33.208Z"
+      }
+    ]
+  },
+  "exams_455770": {
+    "columns": [
+      "id",
+      "title",
+      "description",
+      "duration_minutes",
+      "max_attempts",
+      "folder_id",
+      "is_published",
+      "negative_marking",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "rows": [
+      {
+        "id": "nyxxm5q4v8f",
+        "title": "addition",
+        "description": "",
+        "duration_minutes": 60,
+        "max_attempts": 1,
+        "folder_id": "xrq30ifhdc",
+        "is_published": true,
+        "negative_marking": "0",
+        "created_by": "admin-1",
+        "created_at": "2026-07-06T09:27:44.159Z",
+        "updated_at": "2026-07-06T09:28:07.353Z"
+      }
+    ]
+  },
+  "folders_393417": {
+    "columns": [
+      "id",
+      "name",
+      "parent_id",
+      "created_by",
+      "created_at"
+    ],
+    "rows": [
+      {
+        "id": "e7ackya502i",
+        "name": "xnxx",
+        "parent_id": null,
+        "created_by": "user-1783453970779-ajzv",
+        "created_at": "2026-07-07T20:31:15.456Z"
+      }
+    ]
+  },
+  "exams_393417": {
+    "columns": [
+      "id",
+      "title",
+      "description",
+      "duration_minutes",
+      "max_attempts",
+      "folder_id",
+      "is_published",
+      "negative_marking",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "rows": []
+  },
+  "folders_654321": {
+    "columns": [
+      "id",
+      "name",
+      "parent_id",
+      "created_by",
+      "created_at"
+    ],
+    "rows": []
+  },
+  "exams_654321": {
+    "columns": [
+      "id",
+      "title",
+      "description",
+      "duration_minutes",
+      "max_attempts",
+      "folder_id",
+      "is_published",
+      "negative_marking",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "rows": []
+  },
+  "folders_324732": {
+    "columns": [
+      "id",
+      "name",
+      "parent_id",
+      "created_by",
+      "created_at"
+    ],
+    "rows": []
+  },
+  "exams_324732": {
+    "columns": [
+      "id",
+      "title",
+      "description",
+      "duration_minutes",
+      "max_attempts",
+      "folder_id",
+      "is_published",
+      "negative_marking",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "rows": []
+  }
+}

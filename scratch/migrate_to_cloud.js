@@ -1,8 +1,8 @@
 const { Pool } = require('pg');
-require('dotenv').config({ path: '.env.local' });
+const fs = require('fs');
 
 // Verify target URL is provided
-const targetUrl = process.argv[2] || process.env.TARGET_DATABASE_URL;
+const targetUrl = process.argv[2];
 
 if (!targetUrl) {
   console.error('Error: Please provide your target cloud DATABASE_URL as an argument.');
@@ -10,12 +10,34 @@ if (!targetUrl) {
   process.exit(1);
 }
 
+// Manually parse .env.local
+const env = {};
+try {
+  if (fs.existsSync('.env.local')) {
+    const envFile = fs.readFileSync('.env.local', 'utf8');
+    envFile.split(/\r?\n/).forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) return;
+      const index = trimmed.indexOf('=');
+      if (index === -1) return;
+      const key = trimmed.substring(0, index).trim();
+      let val = trimmed.substring(index + 1).trim();
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.substring(1, val.length - 1);
+      }
+      env[key] = val;
+    });
+  }
+} catch (e) {
+  console.log('No .env.local file found, reading from process environment.');
+}
+
 const localConfig = {
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'online_exam_final',
-  password: process.env.DB_PASSWORD,
-  port: parseInt(process.env.DB_PORT || '5432'),
+  user: env.DB_USER || process.env.DB_USER || 'postgres',
+  host: env.DB_HOST || process.env.DB_HOST || 'localhost',
+  database: env.DB_NAME || process.env.DB_NAME || 'online_exam_final',
+  password: env.DB_PASSWORD || process.env.DB_PASSWORD,
+  port: parseInt(env.DB_PORT || process.env.DB_PORT || '5432'),
 };
 
 async function runMigration() {
@@ -29,7 +51,7 @@ async function runMigration() {
   });
 
   try {
-    // 1. Fetch all teacher tables
+    // 1. Fetch all local tables
     console.log('Scanning local tables...');
     const tablesRes = await localPool.query(`
       SELECT table_name 
@@ -37,35 +59,108 @@ async function runMigration() {
       WHERE table_schema = 'public'
     `);
     const tables = tablesRes.rows.map(r => r.table_name);
-    console.log('Found tables:', tables);
+    console.log('Found tables to migrate:', tables);
 
-    // 2. Initialize tables on remote database
-    console.log('Creating schema and tables on remote database...');
-    // We will initialize the main tables first
-    const mainTables = [
-      'users', 'folders', 'exams', 'questions', 'attempts', 'answers', 'ai_feedback', 'user_access'
+    // 2. Initialize core schemas on remote
+    console.log('Initializing core schemas on remote...');
+    const schemas = [
+      `CREATE TABLE IF NOT EXISTS users (
+        id VARCHAR(255) PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        full_name VARCHAR(255),
+        avatar_url VARCHAR(255),
+        user_code VARCHAR(6) UNIQUE,
+        role VARCHAR(50),
+        age INTEGER,
+        phone_number VARCHAR(50),
+        address TEXT,
+        college VARCHAR(255),
+        major VARCHAR(255),
+        graduation_year INTEGER,
+        bio TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS folders (
+        id VARCHAR(255) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        parent_id VARCHAR(255) REFERENCES folders(id) ON DELETE CASCADE,
+        created_by VARCHAR(255),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS exams (
+        id VARCHAR(255) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        duration_minutes INTEGER NOT NULL DEFAULT 60,
+        max_attempts INTEGER DEFAULT 1,
+        folder_id VARCHAR(255) REFERENCES folders(id) ON DELETE SET NULL,
+        is_published BOOLEAN DEFAULT FALSE,
+        negative_marking NUMERIC DEFAULT 0,
+        created_by VARCHAR(255),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS questions (
+        id VARCHAR(255) PRIMARY KEY,
+        exam_id VARCHAR(255),
+        question_text TEXT,
+        options JSONB NOT NULL,
+        correct_option_id VARCHAR(50) NOT NULL,
+        subject VARCHAR(255),
+        topic VARCHAR(255),
+        marks INTEGER DEFAULT 2,
+        negative_marking NUMERIC DEFAULT 0,
+        order_index INTEGER DEFAULT 0,
+        question_image TEXT,
+        question_type VARCHAR(50) DEFAULT 'mcq',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS attempts (
+        id VARCHAR(255) PRIMARY KEY,
+        exam_id VARCHAR(255),
+        user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+        status VARCHAR(50) NOT NULL DEFAULT 'in_progress',
+        started_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        submitted_at TIMESTAMP WITH TIME ZONE,
+        score NUMERIC DEFAULT 0,
+        total_marks INTEGER DEFAULT 0,
+        rank INTEGER,
+        warnings INTEGER DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS answers (
+        id VARCHAR(255) PRIMARY KEY,
+        attempt_id VARCHAR(255) REFERENCES attempts(id) ON DELETE CASCADE,
+        question_id VARCHAR(255) REFERENCES questions(id) ON DELETE CASCADE,
+        selected_option_id VARCHAR(50),
+        descriptive_answer TEXT,
+        is_correct BOOLEAN,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT unique_attempt_question UNIQUE (attempt_id, question_id)
+      )`,
+      `CREATE TABLE IF NOT EXISTS ai_feedback (
+        id VARCHAR(255) PRIMARY KEY,
+        attempt_id VARCHAR(255) REFERENCES attempts(id) ON DELETE CASCADE,
+        mistake_analysis JSONB NOT NULL DEFAULT '[]'::jsonb,
+        weak_topics JSONB NOT NULL DEFAULT '[]'::jsonb,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS user_access (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+        accessed_user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+        user_code VARCHAR(6),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT unique_user_access UNIQUE (user_id, accessed_user_id)
+      )`
     ];
-    
-    // Run schema initializations on remote
-    const { initializeDatabase, ensureTeacherTables } = require('../lib/db.js');
-    // Set env variables temporarily so db.js points to the remote database
-    process.env.DATABASE_URL = targetUrl;
-    
-    // We import and run initializeDatabase from our project
-    const db = require('../lib/db.js');
-    
-    // Create connection pool targeting remote explicitly for query helper
-    console.log('Initializing remote table structures...');
-    
-    // Let's create dynamic teacher tables found in local
-    const teacherCodes = [];
-    tables.forEach(t => {
-      if (t.startsWith('folders_')) {
-        teacherCodes.push(t.replace('folders_', ''));
-      }
-    });
 
-    // Disable triggers/foreign key checks temporarily on remote to allow clean inserts
+    for (const schema of schemas) {
+      await remotePool.query(schema);
+    }
+    console.log('Core tables initialized successfully.');
+
+    // Disable constraints temporarily on remote to allow clean inserts
     console.log('Suspending constraint checks on remote...');
     await remotePool.query("SET session_replication_role = 'replica'");
 
@@ -85,11 +180,6 @@ async function runMigration() {
 
       // Create teacher tables on remote first if they are dynamic tables
       if (table.startsWith('folders_') || table.startsWith('exams_')) {
-        const createQuery = await localPool.query(`
-          SELECT pg_get_ddl_for_table_mock_stub_not_needed_using_create_if_not_exists($1)
-        `).catch(() => null);
-        
-        // Dynamic recreate using simple schemas
         const code = table.split('_')[1];
         if (table.startsWith('folders_')) {
           await remotePool.query(`
