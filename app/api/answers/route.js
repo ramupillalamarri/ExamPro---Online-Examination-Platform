@@ -22,6 +22,12 @@ export async function POST( req) {
       descriptiveAnswer = descriptiveAnswer.trim()
     }
 
+    // Verify attempt exists to avoid foreign key trigger violations
+    const attemptCheck = await query('SELECT id FROM attempts WHERE id = $1', [attemptId]);
+    if (attemptCheck.rowCount === 0) {
+      return NextResponse.json({ error: 'Attempt session has expired or been cleared.' }, { status: 401 });
+    }
+
     const answerId = id || generateId();
     const res = await query(`
       INSERT INTO answers (id, attempt_id, question_id, selected_option_id, descriptive_answer)

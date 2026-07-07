@@ -12,6 +12,7 @@ export async function GET(req) {
 
     let isTeacher = false;
     let teacherUserCode = '';
+    let userExists = true;
     if (userId) {
       const userRes = await query('SELECT role, user_code FROM users WHERE id = $1', [userId]);
       if (userRes.rowCount > 0) {
@@ -20,6 +21,8 @@ export async function GET(req) {
           isTeacher = true;
           teacherUserCode = user.user_code;
         }
+      } else {
+        userExists = false;
       }
     }
 
@@ -197,6 +200,7 @@ export async function GET(req) {
       attempts: attemptsRes.rows,
       answers: answersRes.rows,
       aiFeedback: feedbackRes.rows,
+      userExists,
     });
   } catch (error) {
     console.error('GET Bulk Data Error:', error);

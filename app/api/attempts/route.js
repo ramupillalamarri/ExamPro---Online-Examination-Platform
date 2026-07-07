@@ -97,6 +97,13 @@ export async function POST( req) {
     if (!examInfo) {
       return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
     }
+
+    // Verify user exists in database to prevent foreign key trigger violations
+    const userCheck = await query('SELECT id FROM users WHERE id = $1', [userId]);
+    if (userCheck.rowCount === 0) {
+      return NextResponse.json({ error: 'User session has expired. Please log out and sign in again.' }, { status: 401 });
+    }
+
     const exam = examInfo.exam;
     const maxAttempts = exam.max_attempts !== null && exam.max_attempts !== undefined ? exam.max_attempts : 1;
 
