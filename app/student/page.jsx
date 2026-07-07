@@ -438,7 +438,7 @@ export default function StudentDashboard() {
                   variants={staggerContainer}
                   initial="hidden"
                   animate="visible"
-                  className="space-y-3"
+                  className="space-y-3 max-h-[350px] overflow-y-auto pr-1.5 scrollbar-thin"
                 >
                   {recentAttempts.map((attempt, index) => {
                     const percentage = ((attempt.score || 0) / (attempt.totalMarks || 1)) * 100
@@ -653,83 +653,85 @@ export default function StudentDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              {publishedExams.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex flex-col items-center justify-center py-12 text-center"
-                >
-                  <motion.div
-                    animate={{ rotate: [0, 10, -10, 0], y: [0, -5, 0] }}
-                    transition={{ duration: 4, repeat: Infinity }}
-                    className="h-20 w-20 rounded-3xl bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-4"
-                  >
-                    <BookOpen className="h-10 w-10 text-muted-foreground" />
-                  </motion.div>
-                  <p className="text-foreground font-medium">No exams available</p>
-                  <p className="text-sm text-muted-foreground">Check back later for new exams</p>
-                </motion.div>
-              ) : (
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  animate="visible"
-                  className="space-y-3"
-                >
-                  {publishedExams.slice(0, 4).map((exam, index) => {
-                    const hasAttempted = userAttempts.some((a) => a.examId === exam.id && a.status === "graded")
+              {(() => {
+                const unattemptedExams = publishedExams.filter(
+                  (exam) => !userAttempts.some((a) => a.examId === exam.id)
+                )
 
-                    return (
+                if (unattemptedExams.length === 0) {
+                  return (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex flex-col items-center justify-center py-12 text-center"
+                    >
                       <motion.div
-                        key={exam.id}
-                        variants={fadeInUp}
-                        whileHover={{ scale: 1.01, x: 4 }}
-                        className="flex flex-wrap sm:flex-nowrap items-center gap-4 p-4 rounded-xl border border-border/50 bg-background/50 hover:bg-background hover:shadow-lg transition-all group"
+                        animate={{ scale: [1, 1.05, 1] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        className="h-20 w-20 rounded-3xl bg-gradient-to-br from-success/20 to-success/10 flex items-center justify-center mb-4"
                       >
-                        <motion.div
-                          whileHover={{ rotate: 10, scale: 1.1 }}
-                          className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-glow-1/20 flex items-center justify-center shrink-0"
-                        >
-                          <BookOpen className="h-6 w-6 text-primary" />
-                        </motion.div>
-                        <div className="flex-1 min-w-[200px]">
-                          <p className="font-semibold text-foreground truncate group-hover:gradient-text transition-all">
-                            {exam.title}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {exam.durationMinutes} min
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Target className="h-3 w-3" />
-                              {exam.questionCount || 0} questions
-                            </span>
-                            {hasAttempted && (
-                              <Badge variant="outline" className="text-xs bg-success/10 text-success border-success/20">
-                                <CheckCircle2 className="h-3 w-3 mr-1" />
-                                Completed
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <div className="w-full sm:w-auto mt-2 sm:mt-0">
-                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Button
-                              onClick={() => router.push(`/student/exams`)}
-                              variant={hasAttempted ? "outline" : "default"}
-                              size="sm"
-                              className={`w-full sm:w-auto ${!hasAttempted ? "shadow-md shadow-primary/20 bg-gradient-to-r from-primary to-glow-1" : ""}`}
-                            >
-                              {hasAttempted ? "Retake" : "Start"}
-                            </Button>
-                          </motion.div>
-                        </div>
+                        <CheckCircle2 className="h-10 w-10 text-success" />
                       </motion.div>
-                    )
-                  })}
-                </motion.div>
-              )}
+                      <p className="text-foreground font-semibold mb-1">All Caught Up!</p>
+                      <p className="text-sm text-muted-foreground">You have attempted all available exams. Outstanding job!</p>
+                    </motion.div>
+                  )
+                }
+
+                return (
+                  <motion.div
+                    variants={staggerContainer}
+                    initial="hidden"
+                    animate="visible"
+                    className="space-y-3 max-h-[350px] overflow-y-auto pr-1.5 scrollbar-thin"
+                  >
+                    {unattemptedExams.map((exam, index) => {
+                      return (
+                        <motion.div
+                          key={exam.id}
+                          variants={fadeInUp}
+                          whileHover={{ scale: 1.01, x: 4 }}
+                          className="flex flex-wrap sm:flex-nowrap items-center gap-4 p-4 rounded-xl border border-border/50 bg-background/50 hover:bg-background hover:shadow-lg transition-all group"
+                        >
+                          <motion.div
+                            whileHover={{ rotate: 10, scale: 1.1 }}
+                            className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-glow-1/20 flex items-center justify-center shrink-0"
+                          >
+                            <BookOpen className="h-6 w-6 text-primary" />
+                          </motion.div>
+                          <div className="flex-1 min-w-[200px]">
+                            <p className="font-semibold text-foreground truncate group-hover:gradient-text transition-all">
+                              {exam.title}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {exam.durationMinutes} min
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Target className="h-3 w-3" />
+                                {exam.questionCount || 0} questions
+                              </span>
+                            </div>
+                          </div>
+                          <div className="w-full sm:w-auto mt-2 sm:mt-0">
+                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                              <Button
+                                onClick={() => router.push(`/exam/${exam.id}`)}
+                                variant="default"
+                                size="sm"
+                                className="w-full sm:w-auto"
+                              >
+                                Start
+                              </Button>
+                            </motion.div>
+                          </div>
+                        </motion.div>
+                      )
+                    })}
+                  </motion.div>
+                )
+              })()}
             </CardContent>
           </Card>
         </motion.div>
