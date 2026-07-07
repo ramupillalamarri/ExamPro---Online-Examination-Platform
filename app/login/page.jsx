@@ -327,49 +327,6 @@ export default function LoginPage() {
                     ) : (
                       <div className="flex flex-col items-center gap-4 w-full">
                         <div id="google-login-btn"></div>
-                        {isDevelopment && (
-                          <div className="flex flex-col gap-2 w-full max-w-[320px] pt-4 border-t border-border/50 mt-2">
-                            <p className="text-center text-xs text-muted-foreground font-semibold mb-1">Local Dev Bypass</p>
-                            <Button 
-                              onClick={async () => {
-                                setIsLoading(true)
-                                try {
-                                  await login("ramupillalamarri66@gmail.com", "admin", "Ramu Pillalamarri (Dev)", "")
-                                  await setCurrentRole("teacher")
-                                  toast.success("Logged in as Dev Teacher!")
-                                  router.push("/admin")
-                                } catch (e) {
-                                  toast.error("Dev login failed")
-                                } finally {
-                                  setIsLoading(false)
-                                }
-                              }}
-                              variant="outline"
-                              className="w-full border-dashed border-primary/40 hover:border-primary text-xs h-9"
-                            >
-                              Login as Teacher (Mock)
-                            </Button>
-                            <Button 
-                              onClick={async () => {
-                                setIsLoading(true)
-                                try {
-                                  await login("student@exampro.com", "student", "John Student (Dev)", "")
-                                  await setCurrentRole("student")
-                                  toast.success("Logged in as Dev Student!")
-                                  router.push("/student")
-                                } catch (e) {
-                                  toast.error("Dev login failed")
-                                } finally {
-                                  setIsLoading(false)
-                                }
-                              }}
-                              variant="outline"
-                              className="w-full border-dashed border-primary/40 hover:border-primary text-xs h-9"
-                            >
-                              Login as Student (Mock)
-                            </Button>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>

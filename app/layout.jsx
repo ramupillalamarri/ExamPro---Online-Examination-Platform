@@ -7,6 +7,9 @@ export const metadata = {
   title: 'ExamPro - Online Examination Platform',
   description: 'A comprehensive online examination platform with AI-powered feedback and analytics',
   generator: 'v0.app',
+  icons: {
+    icon: '/icon.svg',
+  },
 }
 
 export const viewport = {
