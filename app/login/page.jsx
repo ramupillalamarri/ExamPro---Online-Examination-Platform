@@ -50,6 +50,11 @@ export default function LoginPage() {
   const isDevelopment = process.env.NODE_ENV === "development"
 
   useEffect(() => {
+    console.log("Next.js Loaded Google Client ID:", GOOGLE_CLIENT_ID)
+    if (!GOOGLE_CLIENT_ID) {
+      console.warn("GOOGLE_CLIENT_ID is not configured in environment variables (.env.local or production variables).")
+    }
+
     if (!GOOGLE_CLIENT_ID || typeof window === "undefined") {
       return
     }
@@ -59,6 +64,7 @@ export default function LoginPage() {
     const initGoogle = () => {
       try {
         if (window.google) {
+          console.log("Initializing Google accounts ID API...")
           window.google.accounts.id.initialize({
             client_id: GOOGLE_CLIENT_ID,
             callback: handleGoogleLogin,
