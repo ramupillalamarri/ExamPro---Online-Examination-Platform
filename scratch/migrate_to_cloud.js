@@ -223,7 +223,13 @@ async function runMigration() {
         const insertQuery = `INSERT INTO ${table} (${colList}) VALUES (${valPlaceholders}) ON CONFLICT DO NOTHING`;
 
         for (const row of rowsRes.rows) {
-          const values = columns.map(col => row[col]);
+          const values = columns.map(col => {
+            const val = row[col];
+            if (val !== null && typeof val === 'object') {
+              return JSON.stringify(val);
+            }
+            return val;
+          });
           await remotePool.query(insertQuery, values);
         }
       }
