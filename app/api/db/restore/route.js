@@ -123,8 +123,15 @@ export async function GET(request) {
       await pool.query(schema);
     }
 
-    // Disable constraints temporarily on remote to allow clean inserts
-    await pool.query("SET session_replication_role = 'replica'");
+    // Drop core foreign key constraints
+    await pool.query(`ALTER TABLE folders DROP CONSTRAINT IF EXISTS folders_parent_id_fkey`).catch(() => {});
+    await pool.query(`ALTER TABLE exams DROP CONSTRAINT IF EXISTS exams_folder_id_fkey`).catch(() => {});
+    await pool.query(`ALTER TABLE attempts DROP CONSTRAINT IF EXISTS attempts_user_id_fkey`).catch(() => {});
+    await pool.query(`ALTER TABLE answers DROP CONSTRAINT IF EXISTS answers_attempt_id_fkey`).catch(() => {});
+    await pool.query(`ALTER TABLE answers DROP CONSTRAINT IF EXISTS answers_question_id_fkey`).catch(() => {});
+    await pool.query(`ALTER TABLE ai_feedback DROP CONSTRAINT IF EXISTS ai_feedback_attempt_id_fkey`).catch(() => {});
+    await pool.query(`ALTER TABLE user_access DROP CONSTRAINT IF EXISTS user_access_user_id_fkey`).catch(() => {});
+    await pool.query(`ALTER TABLE user_access DROP CONSTRAINT IF EXISTS user_access_accessed_user_id_fkey`).catch(() => {});
 
     const results = {};
 
@@ -139,11 +146,12 @@ export async function GET(request) {
             CREATE TABLE IF NOT EXISTS folders_${code} (
               id VARCHAR(255) PRIMARY KEY,
               name VARCHAR(255) NOT NULL,
-              parent_id VARCHAR(255) REFERENCES folders_${code}(id) ON DELETE CASCADE,
+              parent_id VARCHAR(255),
               created_by VARCHAR(255),
               created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
           `);
+          await pool.query(`ALTER TABLE folders_${code} DROP CONSTRAINT IF EXISTS folders_${code}_parent_id_fkey`).catch(() => {});
         } else if (table.startsWith('exams_')) {
           await pool.query(`
             CREATE TABLE IF NOT EXISTS exams_${code} (
@@ -152,7 +160,7 @@ export async function GET(request) {
               description TEXT,
               duration_minutes INTEGER NOT NULL DEFAULT 60,
               max_attempts INTEGER DEFAULT 1,
-              folder_id VARCHAR(255) REFERENCES folders_${code}(id) ON DELETE SET NULL,
+              folder_id VARCHAR(255),
               is_published BOOLEAN DEFAULT FALSE,
               negative_marking NUMERIC DEFAULT 0,
               created_by VARCHAR(255),
@@ -160,6 +168,7 @@ export async function GET(request) {
               updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
           `);
+          await pool.query(`ALTER TABLE exams_${code} DROP CONSTRAINT IF EXISTS exams_${code}_folder_id_fkey`).catch(() => {});
         }
       }
 
@@ -179,8 +188,26 @@ export async function GET(request) {
       results[table] = `${rows.length} rows migrated`;
     }
 
-    // Restore constraints
-    await pool.query("SET session_replication_role = 'origin'");
+    // Restore core foreign key constraints
+    await pool.query(`ALTER TABLE folders ADD CONSTRAINT folders_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES folders(id) ON DELETE CASCADE`).catch(() => {});
+    await pool.query(`ALTER TABLE exams ADD CONSTRAINT exams_folder_id_fkey FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE SET NULL`).catch(() => {});
+    await pool.query(`ALTER TABLE attempts ADD CONSTRAINT attempts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`).catch(() => {});
+    await pool.query(`ALTER TABLE answers ADD CONSTRAINT answers_attempt_id_fkey FOREIGN KEY (attempt_id) REFERENCES attempts(id) ON DELETE CASCADE`).catch(() => {});
+    await pool.query(`ALTER TABLE answers ADD CONSTRAINT answers_question_id_fkey FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE`).catch(() => {});
+    await pool.query(`ALTER TABLE ai_feedback ADD CONSTRAINT ai_feedback_attempt_id_fkey FOREIGN KEY (attempt_id) REFERENCES attempts(id) ON DELETE CASCADE`).catch(() => {});
+    await pool.query(`ALTER TABLE user_access ADD CONSTRAINT user_access_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`).catch(() => {});
+    await pool.query(`ALTER TABLE user_access ADD CONSTRAINT user_access_accessed_user_id_fkey FOREIGN KEY (accessed_user_id) REFERENCES users(id) ON DELETE CASCADE`).catch(() => {});
+
+    // Restore dynamic teacher table constraints
+    for (const table of Object.keys(dumpData)) {
+      if (table.startsWith('folders_')) {
+        const code = table.split('_')[1];
+        await pool.query(`ALTER TABLE folders_${code} ADD CONSTRAINT folders_${code}_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES folders_${code}(id) ON DELETE CASCADE`).catch(() => {});
+      } else if (table.startsWith('exams_')) {
+        const code = table.split('_')[1];
+        await pool.query(`ALTER TABLE exams_${code} ADD CONSTRAINT exams_${code}_folder_id_fkey FOREIGN KEY (folder_id) REFERENCES folders_${code}(id) ON DELETE SET NULL`).catch(() => {});
+      }
+    }
 
     return NextResponse.json({ message: 'Migration successful', details: results });
   } catch (err) {
