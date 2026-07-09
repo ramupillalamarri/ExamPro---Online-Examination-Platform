@@ -9,6 +9,7 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton, RowSkeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -129,6 +130,7 @@ export default function AttemptsPage() {
   const [activeTab, setActiveTab] = useState("attempts") // "attempts" or "leaderboard"
   const [statusFilter, setStatusFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
 
   // Leaderboard states
   const [selectedExamId, setSelectedExamId] = useState("")
@@ -148,8 +150,15 @@ export default function AttemptsPage() {
   }, [isHydrated, mounted, isAuthenticated, router])
 
   useEffect(() => {
+    let active = true
     if (isHydrated && mounted && user) {
-      fetchData()
+      setIsLoading(true)
+      fetchData().finally(() => {
+        if (active) setIsLoading(false)
+      })
+    }
+    return () => {
+      active = false
     }
   }, [isHydrated, mounted, user?.id, fetchData])
 
@@ -370,7 +379,11 @@ export default function AttemptsPage() {
                         <div>
                           <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider leading-none">{stat.title}</p>
                           <p className="text-xl font-black text-slate-800 tracking-tight mt-1.5 leading-none">
-                            {stat.value}
+                            {isLoading ? (
+                              <Skeleton className="h-6 w-12" />
+                            ) : (
+                              stat.value
+                            )}
                           </p>
                         </div>
                       </div>
@@ -414,7 +427,15 @@ export default function AttemptsPage() {
             </motion.div>
 
             {/* Attempts Table / Mobile Cards */}
-            {filteredAttempts.length === 0 ? (
+            {isLoading ? (
+              <div className="space-y-4">
+                <RowSkeleton />
+                <RowSkeleton />
+                <RowSkeleton />
+                <RowSkeleton />
+                <RowSkeleton />
+              </div>
+            ) : filteredAttempts.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}

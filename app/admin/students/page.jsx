@@ -46,6 +46,7 @@ import {
   Hash,
   User
 } from "lucide-react"
+import { Skeleton, RowSkeleton } from "@/components/ui/skeleton"
 
 export default function StudentsPage() {
   const router = useRouter()
@@ -197,9 +198,9 @@ export default function StudentsPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50 border border-border">
                 <span className="text-sm font-medium text-muted-foreground">Total Students</span>
-                <span className="font-bold text-foreground text-lg text-right">
+                <span className="font-bold text-foreground text-lg text-right animate-pulse">
                   {isLoading ? (
-                    <span className="inline-block h-5 w-8 bg-muted-foreground/20 animate-pulse rounded" />
+                    <Skeleton className="h-6 w-8" />
                   ) : (
                     studentStats.length
                   )}
@@ -207,9 +208,9 @@ export default function StudentsPage() {
               </div>
               <div className="flex justify-between items-center p-3 rounded-lg bg-primary/5 border border-primary/10">
                 <span className="text-sm font-medium text-muted-foreground">Total Submissions</span>
-                <span className="font-bold text-primary text-lg text-right">
+                <span className="font-bold text-primary text-lg text-right animate-pulse">
                   {isLoading ? (
-                    <span className="inline-block h-5 w-8 bg-muted-foreground/20 animate-pulse rounded" />
+                    <Skeleton className="h-6 w-8" />
                   ) : (
                     attemptsData.length
                   )}
@@ -217,9 +218,9 @@ export default function StudentsPage() {
               </div>
               <div className="flex justify-between items-center p-3 rounded-lg bg-success/5 border border-success/10">
                 <span className="text-sm font-medium text-muted-foreground">Class Average</span>
-                <span className="font-bold text-success text-lg text-right">
+                <span className="font-bold text-success text-lg text-right animate-pulse">
                   {isLoading ? (
-                    <span className="inline-block h-5 w-12 bg-muted-foreground/20 animate-pulse rounded" />
+                    <Skeleton className="h-6 w-12" />
                   ) : (
                     `${classAvg.toFixed(1)}%`
                   )}
@@ -321,9 +322,11 @@ export default function StudentsPage() {
             </CardHeader>
             <CardContent className="p-0">
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-3">
-                  <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-                  <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading students roster...</p>
+                <div className="space-y-3 p-4">
+                  <RowSkeleton />
+                  <RowSkeleton />
+                  <RowSkeleton />
+                  <RowSkeleton />
                 </div>
               ) : filteredStudents.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">

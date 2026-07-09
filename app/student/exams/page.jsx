@@ -45,6 +45,7 @@ import {
   LayoutGrid
 } from "lucide-react"
 import { FloatingShapes, GlowingDots } from "@/components/ui/animated-background"
+import { CardSkeleton } from "@/components/ui/skeleton"
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -356,7 +357,7 @@ export default function StudentExamsPage() {
           {isLoading ? (
             <div key="loader" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 w-full">
               {[1, 2, 3].map((i) => (
-                <Card key={i} className="animate-pulse border-border/50 bg-card/50 rounded-2xl h-[240px]" />
+                <CardSkeleton key={i} />
               ))}
             </div>
           ) : isSearchingInExplorer ? (

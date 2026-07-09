@@ -77,6 +77,7 @@ import {
   Filter
 } from "lucide-react"
 import { toast } from "sonner"
+import { CardSkeleton } from "@/components/ui/skeleton"
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 15 },
@@ -543,10 +544,11 @@ export default function ExamsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-24 space-y-4"
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 w-full"
             >
-              <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-              <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading exams & subjects...</p>
+              {[1, 2, 3].map((i) => (
+                <CardSkeleton key={i} />
+              ))}
             </motion.div>
           ) : isSearchingInExplorer ? (
             /* Global Explorer Search View Override */

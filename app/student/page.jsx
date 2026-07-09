@@ -32,6 +32,7 @@ import {
   Bell,
   AlertCircle
 } from "lucide-react"
+import { Skeleton, RowSkeleton } from "@/components/ui/skeleton"
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -335,7 +336,7 @@ export default function StudentDashboard() {
                       transition={{ delay: index * 0.1 + 0.3 }}
                     >
                       {isLoading ? (
-                        <span className="inline-block h-8 w-12 bg-muted-foreground/20 animate-pulse rounded" />
+                        <Skeleton className="h-9 w-16" />
                       ) : (
                         stat.value
                       )}
@@ -415,9 +416,10 @@ export default function StudentDashboard() {
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-12 space-y-3">
-                  <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
-                  <p className="text-muted-foreground text-sm">Loading recent attempts...</p>
+                <div className="space-y-3">
+                  <RowSkeleton />
+                  <RowSkeleton />
+                  <RowSkeleton />
                 </div>
               ) : recentAttempts.length === 0 ? (
                 <motion.div
@@ -530,9 +532,13 @@ export default function StudentDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="flex flex-col items-center justify-center py-10 space-y-3">
-                    <div className="h-6 w-6 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
-                    <p className="text-muted-foreground text-xs font-medium animate-pulse">Loading detailed performance...</p>
+                  <div className="space-y-4 py-2">
+                    <div className="grid grid-cols-3 gap-2">
+                      <Skeleton className="h-14 rounded-lg animate-pulse" />
+                      <Skeleton className="h-14 rounded-lg animate-pulse" />
+                      <Skeleton className="h-14 rounded-lg animate-pulse" />
+                    </div>
+                    <Skeleton className="h-20 rounded-xl" />
                   </div>
                 ) : (
                   <>

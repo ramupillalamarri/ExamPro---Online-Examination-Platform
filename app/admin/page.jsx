@@ -40,6 +40,7 @@ import {
   Brain,
   AlertCircle,
 } from "lucide-react"
+import { Skeleton, RowSkeleton } from "@/components/ui/skeleton"
 import {
   BarChart,
   Bar,
@@ -357,7 +358,7 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="text-2xl font-bold text-foreground">
                   {isLoading ? (
-                    <span className="inline-block h-6 w-12 bg-muted-foreground/20 animate-pulse rounded" />
+                    <Skeleton className="h-6 w-12" />
                   ) : (
                     stat.value
                   )}
@@ -365,7 +366,7 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-xs text-muted-foreground">
                     {isLoading ? (
-                      <span className="inline-block h-3.5 w-24 bg-muted-foreground/15 animate-pulse rounded" />
+                      <Skeleton className="h-3.5 w-24" />
                     ) : (
                       stat.description
                     )}
@@ -642,9 +643,10 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-12 space-y-3">
-                <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
-                <p className="text-muted-foreground text-sm">Loading recent exams...</p>
+              <div className="space-y-3">
+                <RowSkeleton />
+                <RowSkeleton />
+                <RowSkeleton />
               </div>
             ) : (!exams || exams.length === 0) ? (
               <div className="flex flex-col items-center justify-center py-12">
