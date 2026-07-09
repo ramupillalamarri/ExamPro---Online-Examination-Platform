@@ -179,14 +179,7 @@ export default function ExamsPage() {
     }
   }, [deleteFolderTarget])
 
-  if (!mounted || !isHydrated || !isAuthenticated || !user || isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground space-y-4">
-        <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-        <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading exams & subjects...</p>
-      </div>
-    )
-  }
+
 
   // Folder helper calculations
   const getExamCountRecursive = (folderId) => {
@@ -337,6 +330,15 @@ export default function ExamsPage() {
     } finally {
       setIsClearing(false)
     }
+  }
+
+  if (!mounted || !isHydrated || !isAuthenticated || !user || isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground space-y-4">
+        <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+        <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading exams & subjects...</p>
+      </div>
+    )
   }
 
   return (

@@ -110,14 +110,7 @@ export default function StudentsPage() {
     }
   }, [user?.id, mounted])
 
-  if (!mounted || !isHydrated || !isAuthenticated || !user || isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground space-y-4">
-        <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-        <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading students roster...</p>
-      </div>
-    )
-  }
+
 
   const studentStats = useMemo(() => {
     return students.map((student) => {
@@ -167,6 +160,15 @@ export default function StudentsPage() {
     return gradedAttempts.reduce((sum, a) => sum + (a.score * 100 / (a.totalMarks || 1)), 0) / gradedAttempts.length
   }, [attemptsData])
 
+
+  if (!mounted || !isHydrated || !isAuthenticated || !user || isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground space-y-4">
+        <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+        <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading students roster...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 min-h-screen">
