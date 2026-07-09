@@ -161,13 +161,8 @@ export default function StudentsPage() {
   }, [attemptsData])
 
 
-  if (!mounted || !isHydrated || !isAuthenticated || !user || isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground space-y-4">
-        <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-        <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading students roster...</p>
-      </div>
-    )
+  if (!mounted || !isHydrated || !isAuthenticated || !user) {
+    return null
   }
 
   return (
@@ -202,16 +197,32 @@ export default function StudentsPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50 border border-border">
                 <span className="text-sm font-medium text-muted-foreground">Total Students</span>
-                <span className="font-bold text-foreground text-lg">{studentStats.length}</span>
+                <span className="font-bold text-foreground text-lg text-right">
+                  {isLoading ? (
+                    <span className="inline-block h-5 w-8 bg-muted-foreground/20 animate-pulse rounded" />
+                  ) : (
+                    studentStats.length
+                  )}
+                </span>
               </div>
               <div className="flex justify-between items-center p-3 rounded-lg bg-primary/5 border border-primary/10">
                 <span className="text-sm font-medium text-muted-foreground">Total Submissions</span>
-                <span className="font-bold text-primary text-lg">{attemptsData.length}</span>
+                <span className="font-bold text-primary text-lg text-right">
+                  {isLoading ? (
+                    <span className="inline-block h-5 w-8 bg-muted-foreground/20 animate-pulse rounded" />
+                  ) : (
+                    attemptsData.length
+                  )}
+                </span>
               </div>
               <div className="flex justify-between items-center p-3 rounded-lg bg-success/5 border border-success/10">
                 <span className="text-sm font-medium text-muted-foreground">Class Average</span>
-                <span className="font-bold text-success text-lg">
-                  {classAvg.toFixed(1)}%
+                <span className="font-bold text-success text-lg text-right">
+                  {isLoading ? (
+                    <span className="inline-block h-5 w-12 bg-muted-foreground/20 animate-pulse rounded" />
+                  ) : (
+                    `${classAvg.toFixed(1)}%`
+                  )}
                 </span>
               </div>
             </CardContent>
@@ -226,7 +237,12 @@ export default function StudentsPage() {
               <CardDescription>Common weak areas across all students</CardDescription>
             </CardHeader>
             <CardContent>
-              {classInsights.length === 0 ? (
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-6 space-y-2">
+                  <div className="h-6 w-6 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                  <p className="text-muted-foreground text-xs font-medium animate-pulse">Loading insights...</p>
+                </div>
+              ) : classInsights.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">No AI data available yet.</p>
               ) : (
                 <div className="space-y-3">
@@ -304,7 +320,12 @@ export default function StudentsPage() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              {filteredStudents.length === 0 ? (
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 space-y-3">
+                  <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+                  <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading students roster...</p>
+                </div>
+              ) : filteredStudents.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <Users className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
                   <p className="text-foreground font-medium">No students found</p>

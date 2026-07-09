@@ -79,14 +79,9 @@ export default function StudentDashboard() {
     }
   }, [isHydrated, mounted, isAuthenticated, user, router, fetchData])
 
-  // Return loader to prevent rendering while loading/unauthenticated
-  if (!mounted || !isHydrated || !isAuthenticated || !user || isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground space-y-4">
-        <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-        <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading dashboard data...</p>
-      </div>
-    )
+  // Return null to prevent rendering while loading/unauthenticated
+  if (!mounted || !isHydrated || !isAuthenticated || !user) {
+    return null
   }
 
   // All calculations below only run if authenticated
@@ -339,7 +334,11 @@ export default function StudentDashboard() {
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: index * 0.1 + 0.3 }}
                     >
-                      {stat.value}
+                      {isLoading ? (
+                        <span className="inline-block h-8 w-12 bg-muted-foreground/20 animate-pulse rounded" />
+                      ) : (
+                        stat.value
+                      )}
                     </motion.p>
                     <p className="text-sm text-muted-foreground truncate">{stat.title}</p>
                   </div>
@@ -415,7 +414,12 @@ export default function StudentDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              {recentAttempts.length === 0 ? (
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                  <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                  <p className="text-muted-foreground text-sm">Loading recent attempts...</p>
+                </div>
+              ) : recentAttempts.length === 0 ? (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -511,7 +515,7 @@ export default function StudentDashboard() {
           transition={{ delay: 0.7 }}
           className="flex flex-col gap-6"
         >
-          {completedAttempts.length > 0 && (
+          {(isLoading || completedAttempts.length > 0) && (
             <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -525,21 +529,30 @@ export default function StudentDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                {/* Breakdown Progress Bars */}
-                <div className="grid grid-cols-3 gap-2 mb-6">
-                  <div className="text-center p-3 rounded-lg bg-success/10 border border-success/20">
-                    <p className="text-xl font-bold text-success">{totalCorrect}</p>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Correct</p>
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-10 space-y-3">
+                    <div className="h-6 w-6 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                    <p className="text-muted-foreground text-xs font-medium animate-pulse">Loading detailed performance...</p>
                   </div>
-                  <div className="text-center p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                    <p className="text-xl font-bold text-destructive">{totalIncorrect}</p>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Incorrect</p>
-                  </div>
-                  <div className="text-center p-3 rounded-lg bg-muted border border-border">
-                    <p className="text-xl font-bold text-muted-foreground">{totalUnanswered}</p>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Skipped</p>
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    {/* Breakdown Progress Bars */}
+                    <div className="grid grid-cols-3 gap-2 mb-6">
+                      <div className="text-center p-3 rounded-lg bg-success/10 border border-success/20">
+                        <p className="text-xl font-bold text-success">{totalCorrect}</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Correct</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                        <p className="text-xl font-bold text-destructive">{totalIncorrect}</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Incorrect</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-muted border border-border">
+                        <p className="text-xl font-bold text-muted-foreground">{totalUnanswered}</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Skipped</p>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* AI Insights & Weaknesses */}
                 {aiFeedback.length > 0 && (

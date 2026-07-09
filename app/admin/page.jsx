@@ -120,13 +120,8 @@ export default function AdminDashboard() {
     }
   }, [isHydrated, mounted, isAuthenticated, user, router, fetchData])
 
-  if (!mounted || !isHydrated || !isAuthenticated || !user || isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground space-y-4">
-        <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-        <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading dashboard data...</p>
-      </div>
-    )
+  if (!mounted || !isHydrated || !isAuthenticated || !user) {
+    return null
   }
 
   const publishedExams = (exams || []).filter((e) => e.isPublished)
@@ -360,12 +355,22 @@ export default function AdminDashboard() {
                 </motion.div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+                <div className="text-2xl font-bold text-foreground">
+                  {isLoading ? (
+                    <span className="inline-block h-6 w-12 bg-muted-foreground/20 animate-pulse rounded" />
+                  ) : (
+                    stat.value
+                  )}
+                </div>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-xs text-muted-foreground">
-                    {stat.description}
+                    {isLoading ? (
+                      <span className="inline-block h-3.5 w-24 bg-muted-foreground/15 animate-pulse rounded" />
+                    ) : (
+                      stat.description
+                    )}
                   </span>
-                  {stat.trend && (
+                  {!isLoading && stat.trend && (
                     <span
                       className={`text-xs font-medium flex items-center ${
                         stat.trendUp ? "text-success" : "text-destructive"
@@ -401,7 +406,12 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-[280px]">
-                {examAttemptData.length > 0 ? (
+                {isLoading ? (
+                  <div className="h-full flex flex-col items-center justify-center space-y-3">
+                    <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                    <p className="text-muted-foreground text-sm">Loading chart data...</p>
+                  </div>
+                ) : examAttemptData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={examAttemptData} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={true} vertical={false} />
@@ -452,8 +462,13 @@ export default function AdminDashboard() {
               <CardDescription>Distribution of student scores</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[280px] flex items-center justify-center">
-                {gradedAttempts.length > 0 ? (
+              <div className="h-[280px] flex items-center justify-center w-full">
+                {isLoading ? (
+                  <div className="h-full flex flex-col items-center justify-center space-y-3">
+                    <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                    <p className="text-muted-foreground text-sm">Loading chart data...</p>
+                  </div>
+                ) : gradedAttempts.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -538,7 +553,12 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-[280px]">
-                {attempts && attempts.length > 0 ? (
+                {isLoading ? (
+                  <div className="h-full flex flex-col items-center justify-center space-y-3">
+                    <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                    <p className="text-muted-foreground text-sm">Loading chart data...</p>
+                  </div>
+                ) : attempts && attempts.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={weeklyData}>
                       <defs>
@@ -621,7 +641,12 @@ export default function AdminDashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            {(!exams || exams.length === 0) ? (
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                <p className="text-muted-foreground text-sm">Loading recent exams...</p>
+              </div>
+            ) : (!exams || exams.length === 0) ? (
               <div className="flex flex-col items-center justify-center py-12">
                 <motion.div
                   animate={{ y: [0, -8, 0] }}

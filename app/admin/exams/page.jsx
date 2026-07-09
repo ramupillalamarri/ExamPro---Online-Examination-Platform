@@ -332,13 +332,8 @@ export default function ExamsPage() {
     }
   }
 
-  if (!mounted || !isHydrated || !isAuthenticated || !user || isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground space-y-4">
-        <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-        <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading exams & subjects...</p>
-      </div>
-    )
+  if (!mounted || !isHydrated || !isAuthenticated || !user) {
+    return null
   }
 
   return (
@@ -542,7 +537,18 @@ export default function ExamsPage() {
       {/* Main Grid Content */}
       <div className="relative z-10">
         <AnimatePresence mode="wait">
-          {isSearchingInExplorer ? (
+          {isLoading ? (
+            <motion.div
+              key="loading-explorer"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-24 space-y-4"
+            >
+              <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+              <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading exams & subjects...</p>
+            </motion.div>
+          ) : isSearchingInExplorer ? (
             /* Global Explorer Search View Override */
             <motion.div
               key="explorer-search"
