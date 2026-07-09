@@ -31,7 +31,7 @@ export async function GET(req) {
 export async function PUT(req) {
   try {
     const body = await req.json();
-    const { userId, role, fullName, age, phoneNumber, address, college, major, graduationYear, bio } = body;
+    const { userId, role, fullName, age, phoneNumber, address, college, major, graduationYear, bio, avatarUrl } = body;
     
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -52,6 +52,7 @@ export async function PUT(req) {
     const newGradYear = graduationYear !== undefined ? (graduationYear ? parseInt(graduationYear) : null) : currentUser.graduation_year;
     const newBio = bio !== undefined ? bio : currentUser.bio;
     const newRole = role !== undefined ? role : currentUser.role;
+    const newAvatarUrl = avatarUrl !== undefined ? avatarUrl : currentUser.avatar_url;
 
     const res = await query(`
       UPDATE users
@@ -63,12 +64,13 @@ export async function PUT(req) {
           major = $6,
           graduation_year = $7,
           bio = $8,
-          role = $9
-      WHERE id = $10
+          role = $9,
+          avatar_url = $10
+      WHERE id = $11
       RETURNING id, email, full_name as "fullName", avatar_url as "avatarUrl", role, user_code as "userCode",
                 age, phone_number as "phoneNumber", address, college, major, graduation_year as "graduationYear", bio,
                 created_at as "createdAt"
-    `, [newFullName, newAge, newPhone, newAddress, newCollege, newMajor, newGradYear, newBio, newRole, userId]);
+    `, [newFullName, newAge, newPhone, newAddress, newCollege, newMajor, newGradYear, newBio, newRole, newAvatarUrl, userId]);
 
     const updatedUser = res.rows[0];
     if (updatedUser && (updatedUser.role === 'teacher' || updatedUser.role === 'admin') && updatedUser.userCode) {

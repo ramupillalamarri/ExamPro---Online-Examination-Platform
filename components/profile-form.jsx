@@ -41,7 +41,8 @@ export function ProfileForm({ backUrl }) {
     college: "",
     major: "",
     graduationYear: "",
-    bio: ""
+    bio: "",
+    avatarUrl: ""
   })
 
   useEffect(() => {
@@ -65,7 +66,8 @@ export function ProfileForm({ backUrl }) {
         college: user.college || "",
         major: user.major || "",
         graduationYear: user.graduationYear || "",
-        bio: user.bio || ""
+        bio: user.bio || "",
+        avatarUrl: user.avatarUrl || ""
       })
     }
   }, [user])
@@ -76,6 +78,32 @@ export function ProfileForm({ backUrl }) {
       ...prev,
       [name]: value
     }))
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file.")
+      return
+    }
+
+    if (file.size > 1.5 * 1024 * 1024) {
+      toast.error("Image size must be less than 1.5MB.")
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const dataUrl = event.target.result
+      setFormData((prev) => ({
+        ...prev,
+        avatarUrl: dataUrl
+      }))
+      toast.success("Photo loaded! Click \"Save\" below to update your profile picture.")
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleSubmit = async (e) => {
@@ -91,7 +119,8 @@ export function ProfileForm({ backUrl }) {
         college: formData.college,
         major: formData.major,
         graduationYear: formData.graduationYear ? parseInt(formData.graduationYear) : null,
-        bio: formData.bio
+        bio: formData.bio,
+        avatarUrl: formData.avatarUrl
       })
       toast.success("Profile details saved successfully!")
     } catch (err) {
@@ -128,16 +157,35 @@ export function ProfileForm({ backUrl }) {
             <Card className="border-border/50 bg-white shadow-sm overflow-hidden relative">
               <div className="h-2 bg-gradient-to-r from-primary to-accent" />
               <CardContent className="pt-6 flex flex-col items-center text-center">
-                <div className="relative group">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center text-3xl font-black text-primary border-4 border-slate-50 shadow-inner group-hover:scale-105 transition-transform duration-300">
-                    {user?.fullName?.charAt(0)?.toUpperCase() || "U"}
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 bg-primary text-white p-1.5 rounded-full shadow-md">
+                <div 
+                  className="relative group cursor-pointer" 
+                  onClick={() => document.getElementById("avatar-file-input").click()}
+                >
+                  {formData.avatarUrl ? (
+                    <img 
+                      src={formData.avatarUrl} 
+                      alt="Profile" 
+                      className="w-24 h-24 rounded-full object-cover border-4 border-slate-50 shadow-md group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center text-3xl font-black text-primary border-4 border-slate-50 shadow-inner group-hover:scale-105 transition-transform duration-300">
+                      {formData.fullName?.charAt(0)?.toUpperCase() || user?.fullName?.charAt(0)?.toUpperCase() || "U"}
+                    </div>
+                  )}
+                  <div className="absolute -bottom-1 -right-1 bg-primary text-white p-1.5 rounded-full shadow-md group-hover:bg-primary/95 transition-colors">
                     <Sparkles className="h-3.5 w-3.5" />
                   </div>
+                  <input 
+                    type="file" 
+                    id="avatar-file-input" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={handleFileChange}
+                  />
                 </div>
+                <p className="text-[10px] text-muted-foreground mt-2 font-bold uppercase tracking-wider">Click photo to update</p>
                 
-                <h3 className="font-extrabold text-lg text-slate-800 mt-4 leading-tight">
+                <h3 className="font-extrabold text-lg text-slate-800 mt-3 leading-tight">
                   {formData.fullName || user?.fullName || "User Profile"}
                 </h3>
                 <Badge variant="secondary" className="mt-2 bg-slate-100 text-slate-700 hover:bg-slate-100 font-extrabold capitalize border border-slate-200">

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useExamStore } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
@@ -413,6 +413,9 @@ export function DashboardLayout({ children }) {
                         className="relative"
                       >
                         <Avatar className="h-10 w-10 border-2 border-sidebar-primary/30 shadow-lg shadow-sidebar-primary/20">
+                          {user?.avatarUrl && (
+                            <AvatarImage src={user.avatarUrl} alt={user.fullName || 'User'} className="object-cover" />
+                          )}
                           <AvatarFallback className="bg-gradient-to-br from-sidebar-primary to-glow-1 text-white font-semibold">
                             {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
                           </AvatarFallback>
