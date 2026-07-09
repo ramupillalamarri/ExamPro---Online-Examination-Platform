@@ -17,7 +17,7 @@ import { useExamStore } from "@/lib/store"
 
 export function TouristGuide() {
   const pathname = usePathname()
-  const { user } = useExamStore()
+  const { user, currentRole } = useExamStore()
   const prevUserRef = useRef(undefined)
   
   // Exclude guide entirely on standalone active exam testing screen to prevent distraction flags
@@ -439,7 +439,8 @@ export function TouristGuide() {
         body: JSON.stringify({
           message: query,
           chatHistory: history,
-          currentPath: pathname || "/"
+          currentPath: pathname || "/",
+          currentRole: currentRole || user?.role || "student"
         })
       })
 
