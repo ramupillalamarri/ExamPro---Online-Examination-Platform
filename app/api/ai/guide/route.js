@@ -101,10 +101,10 @@ Left Sidebar Bottom:
 - Mistakes shown so you can learn from them
 
 **Exam Review Page:**
-- Left panel: Your answers vs. correct answers
-- Right panel: Sparky AI Tutor chat - ask questions!
-- Drag the middle bar to resize panels
-- Click any question to chat with Sparky about it
+- Left panel: Question text, options, your selected answer status, and correct option details.
+- Right panel: Sparky AI Tutor chat panel.
+- Drag handle: A vertical resizer bar separating the left and right panels. Drag it **left or right** (horizontally) to resize the panels.
+- Click any question in the sidebar or top bar to focus Sparky on that question.
 
 **Your Profile:**
 - Click your name card at bottom-left of sidebar
