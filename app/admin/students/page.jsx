@@ -57,17 +57,22 @@ export default function StudentsPage() {
   const [isClearing, setIsClearing] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Auth and redirection guard
   useEffect(() => {
-    if (isHydrated) {
+    if (isHydrated && mounted) {
       if (!isAuthenticated) {
         router.push("/login")
       } else if (user?.role === "student") {
         router.push("/student")
       }
     }
-  }, [isHydrated, isAuthenticated, user?.role, router])
+  }, [isHydrated, mounted, isAuthenticated, user?.role, router])
 
   // Dynamic Students Data polling
   useEffect(() => {
@@ -95,7 +100,7 @@ export default function StudentsPage() {
       }
     }
 
-    if (user?.id) {
+    if (user?.id && mounted) {
       loadStudentData(true)
       const pollInterval = setInterval(() => loadStudentData(false), 5000)
       return () => {
@@ -103,9 +108,9 @@ export default function StudentsPage() {
         clearInterval(pollInterval)
       }
     }
-  }, [user?.id])
+  }, [user?.id, mounted])
 
-  if (!isHydrated || !isAuthenticated || !user || isLoading) {
+  if (!mounted || !isHydrated || !isAuthenticated || !user || isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground space-y-4">
         <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
@@ -115,24 +120,34 @@ export default function StudentsPage() {
   }
 
   const studentStats = useMemo(() => {
-    return students.map((student) => ({
-      id: student.id,
-      email: student.email,
-      fullName: student.fullName,
-      age: student.age,
-      phoneNumber: student.phoneNumber,
-      address: student.address,
-      college: student.college,
-      major: student.major,
-      graduationYear: student.graduationYear,
-      bio: student.bio,
-      attempts: student.attemptCount,
-      avgScore: Number(student.avgScore || 0),
-      lastActive: student.lastActive
+    return students.map((student) => {
+      const formattedLastActive = student.lastActive && !isNaN(new Date(student.lastActive).getTime())
         ? new Date(student.lastActive).toLocaleDateString()
-        : new Date(student.createdAt).toLocaleDateString(),
-      joinedAt: new Date(student.createdAt).toLocaleDateString(),
-    }))
+        : student.createdAt && !isNaN(new Date(student.createdAt).getTime())
+          ? new Date(student.createdAt).toLocaleDateString()
+          : "-"
+          
+      const formattedJoinedAt = student.createdAt && !isNaN(new Date(student.createdAt).getTime())
+        ? new Date(student.createdAt).toLocaleDateString()
+        : "-"
+
+      return {
+        id: student.id,
+        email: student.email,
+        fullName: student.fullName,
+        age: student.age,
+        phoneNumber: student.phoneNumber,
+        address: student.address,
+        college: student.college,
+        major: student.major,
+        graduationYear: student.graduationYear,
+        bio: student.bio,
+        attempts: student.attemptCount,
+        avgScore: Number(student.avgScore || 0),
+        lastActive: formattedLastActive,
+        joinedAt: formattedJoinedAt,
+      }
+    })
   }, [students])
 
   const filteredStudents = studentStats.filter(s => s.email.toLowerCase().includes(searchQuery.toLowerCase()))
