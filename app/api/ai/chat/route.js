@@ -21,8 +21,42 @@ export async function POST(req) {
     }
 
     const { id: questionId, questionText, options, correctOptionId, topic, subject } = question || {};
-    const safeOptions = Array.isArray(options) ? options : [];
-    const correctOption = safeOptions.find((option) => option.id === correctOptionId) || {};
+    
+    // Normalize options array: support both strings and objects
+    const safeOptions = (Array.isArray(options) ? options : []).map((opt, index) => {
+      if (typeof opt === 'string') {
+        const letterId = String.fromCharCode(97 + index); // 'a', 'b', 'c', 'd'
+        return { id: letterId, text: opt, imageUrl: null };
+      }
+      return {
+        id: String(opt?.id || '').trim().toLowerCase(),
+        text: opt?.text || 'No text provided',
+        imageUrl: opt?.imageUrl || null
+      };
+    });
+
+    // Resolve correct option using normalized IDs and indices
+    let correctOption = {};
+    const corrIdStr = String(correctOptionId || '').trim().toLowerCase();
+    correctOption = safeOptions.find(opt => opt.id === corrIdStr) || {};
+    
+    // Fallback: index-based match if corrIdStr is numeric (e.g., '0' or '1')
+    if (!correctOption.text && /^\d+$/.test(corrIdStr)) {
+      const idx = parseInt(corrIdStr, 10);
+      if (idx >= 0 && idx < safeOptions.length) {
+        correctOption = safeOptions[idx];
+      }
+    }
+    
+    // Fallback: letter-to-index match if corrIdStr is 'a', 'b', 'c', 'd' but options list has numeric ids
+    if (!correctOption.text && /^[a-d]$/.test(corrIdStr)) {
+      const idx = corrIdStr.charCodeAt(0) - 97;
+      if (idx >= 0 && idx < safeOptions.length) {
+        correctOption = safeOptions[idx];
+      }
+    }
+
+    const displayCorrectOptionId = correctOption.id ? correctOption.id.toUpperCase() : corrIdStr.toUpperCase();
     const apiKey = process.env.GROQ_API_KEY;
     const groqModel = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
     let groqError = null;
@@ -95,7 +129,7 @@ export async function POST(req) {
 
         const formattedQuestionImage = formatImageForPrompt('Question Image', question.questionImage);
         const extractedQuestionImageText = await tryExtractTextFromImage(question.questionImage);
-        const formattedOptions = (Array.isArray(options) ? options : [])
+        const formattedOptions = safeOptions
           .map((option) => {
             const optionText = option.text || 'No text provided';
             const optionImage = option.imageUrl ? formatImageForPrompt(`Option ${option.id.toUpperCase()} Image`, option.imageUrl) : '';
@@ -108,7 +142,7 @@ export async function POST(req) {
         const subjectLine = `Subject: ${subject || 'General'}`;
         const topicLine = `Topic: ${topic || 'General'}`;
         const optionsLine = formattedOptions ? `Options:\n${formattedOptions}` : '';
-        const correctOptionLine = correctOptionId ? `Correct Option: Option ${String(correctOptionId).toUpperCase()} (${correctOption?.text || 'N/A'})` : '';
+        const correctOptionLine = displayCorrectOptionId ? `Correct Option: Option ${displayCorrectOptionId} (${correctOption?.text || 'N/A'})` : '';
 
         // If we managed to extract text from the question image or any option images, include it explicitly
         const extractedParts = [];
