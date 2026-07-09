@@ -90,13 +90,26 @@ export function DashboardLayout({ children }) {
   }, [pathname])
 
   const [mounted, setMounted] = useState(false)
+  const [isSwitchingRole, setIsSwitchingRole] = useState(false)
+
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  useEffect(() => {
+    if (isSwitchingRole) {
+      const isTargetMatched = 
+        (currentRole === "student" && (pathname.startsWith("/student") || pathname.startsWith("/attempts") || pathname.startsWith("/exams") || pathname.startsWith("/dashboard") || pathname.startsWith("/folders"))) ||
+        (currentRole === "teacher" && pathname.startsWith("/admin"))
+      if (isTargetMatched) {
+        setIsSwitchingRole(false)
+      }
+    }
+  }, [pathname, currentRole, isSwitchingRole])
+
   // Check auth and role access after all hooks
   useEffect(() => {
-    if (isHydrated && mounted) {
+    if (isHydrated && mounted && !isSwitchingRole) {
       if (!isAuthenticated) {
         router.push("/login")
       } else {
@@ -108,11 +121,20 @@ export function DashboardLayout({ children }) {
         }
       }
     }
-  }, [isHydrated, mounted, isAuthenticated, currentRole, pathname, router])
+  }, [isHydrated, mounted, isAuthenticated, currentRole, pathname, router, isSwitchingRole])
 
   // Return early only AFTER all hooks are defined
   if (!mounted || !isHydrated || !isAuthenticated || !user) {
     return null
+  }
+
+  if (isSwitchingRole) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground space-y-4">
+        <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+        <p className="text-muted-foreground text-sm font-medium animate-pulse">Switching workspace role...</p>
+      </div>
+    )
   }
 
   const handleLogout = () => {
@@ -126,6 +148,7 @@ export function DashboardLayout({ children }) {
 
   const handleSwitchRole = () => {
     const nextRole = inferredRole === "student" ? "teacher" : "student"
+    setIsSwitchingRole(true)
     setCurrentRole(nextRole)
     if (nextRole === "student") {
       router.push("/student")
