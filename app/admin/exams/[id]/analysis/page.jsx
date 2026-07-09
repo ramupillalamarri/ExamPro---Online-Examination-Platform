@@ -44,7 +44,7 @@ export default function ExamAnalysisPage({ params }) {
     if (isHydrated) {
       if (!isAuthenticated) {
         router.push("/login")
-      } else if (user?.role === "student") {
+      } else if (currentRole === "student") {
         router.push("/student")
       } else {
         // If a folderId or explicit teacher code is present in URL, include it

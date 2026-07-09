@@ -24,20 +24,20 @@ export default function NewExamPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const folderIdParam = searchParams.get("folderId")
-  const { addExam, user, isHydrated, isAuthenticated, fetchData } = useExamStore()
+  const { addExam, user, isHydrated, isAuthenticated, fetchData, currentRole } = useExamStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (isHydrated) {
       if (!isAuthenticated) {
         router.push("/login")
-      } else if (user?.role === "student") {
+      } else if (currentRole === "student") {
         router.push("/student")
       } else {
         fetchData()
       }
     }
-  }, [isHydrated, isAuthenticated, user, router, fetchData])
+  }, [isHydrated, isAuthenticated, currentRole, router, fetchData])
 
   if (!isHydrated || !isAuthenticated || !user) {
     return null

@@ -6,17 +6,17 @@ import { useExamStore } from "@/lib/store"
 
 export default function FoldersRedirect() {
   const router = useRouter()
-  const { user, isHydrated } = useExamStore()
+  const { user, isHydrated, currentRole } = useExamStore()
 
   useEffect(() => {
     if (isHydrated) {
-      if (user?.role === "student") {
+      if (currentRole === "student") {
         router.replace("/student/exams")
       } else {
         router.replace("/admin/exams")
       }
     }
-  }, [isHydrated, user, router])
+  }, [isHydrated, currentRole, router])
 
   return null
 }

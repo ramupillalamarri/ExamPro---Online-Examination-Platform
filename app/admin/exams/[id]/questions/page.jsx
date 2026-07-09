@@ -250,7 +250,7 @@ export default function QuestionsPage({
   const router = useRouter()
   const searchParams = useSearchParams()
   const folderId = searchParams.get("folderId")
-  const { exams, getExamQuestions, addQuestion, updateQuestion, deleteQuestion, user, isHydrated, isAuthenticated, fetchData } =
+  const { exams, getExamQuestions, addQuestion, updateQuestion, deleteQuestion, user, isHydrated, isAuthenticated, fetchData, currentRole } =
     useExamStore()
   const [isQuestionsLoading, setIsQuestionsLoading] = useState(true)
 
@@ -260,7 +260,7 @@ export default function QuestionsPage({
     if (isHydrated) {
       if (!isAuthenticated) {
         router.push("/login")
-      } else if (user?.role === "student") {
+      } else if (currentRole === "student") {
         router.push("/student")
       } else {
         setIsQuestionsLoading(true)

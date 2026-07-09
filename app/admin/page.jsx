@@ -93,7 +93,7 @@ const scaleIn = {
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const { exams, attempts, folders, user, questions, answers, fetchData, isHydrated, isAuthenticated } = useExamStore()
+  const { exams, attempts, folders, user, questions, answers, fetchData, isHydrated, isAuthenticated, currentRole } = useExamStore()
   const [selectedExamAttempts, setSelectedExamAttempts] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
@@ -107,7 +107,7 @@ export default function AdminDashboard() {
     if (isHydrated && mounted) {
       if (!isAuthenticated) {
         router.push("/login")
-      } else if (user?.role === "student") {
+      } else if (currentRole === "student") {
         router.push("/student")
       } else {
         setIsLoading(true)
@@ -119,7 +119,7 @@ export default function AdminDashboard() {
     return () => {
       active = false
     }
-  }, [isHydrated, mounted, isAuthenticated, user, router, fetchData])
+  }, [isHydrated, mounted, isAuthenticated, currentRole, router, fetchData])
 
   if (!mounted || !isHydrated || !isAuthenticated || !user) {
     return null

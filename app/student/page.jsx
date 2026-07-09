@@ -51,7 +51,7 @@ const scaleIn = {
 
 export default function StudentDashboard() {
   const router = useRouter()
-  const { isHydrated, isAuthenticated, user, exams, folders, attempts, answers, aiFeedback, fetchData } = useExamStore()
+  const { isHydrated, isAuthenticated, user, exams, folders, attempts, answers, aiFeedback, fetchData, currentRole } = useExamStore()
 
   const [mounted, setMounted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -66,7 +66,7 @@ export default function StudentDashboard() {
     if (isHydrated && mounted) {
       if (!isAuthenticated) {
         router.push("/login")
-      } else if (user?.role === "teacher" || user?.role === "admin") {
+      } else if (currentRole === "teacher" || currentRole === "admin") {
         router.push("/admin")
       } else {
         setIsLoading(true)
@@ -78,7 +78,7 @@ export default function StudentDashboard() {
     return () => {
       active = false
     }
-  }, [isHydrated, mounted, isAuthenticated, user, router, fetchData])
+  }, [isHydrated, mounted, isAuthenticated, currentRole, router, fetchData])
 
   // Return null to prevent rendering while loading/unauthenticated
   if (!mounted || !isHydrated || !isAuthenticated || !user) {

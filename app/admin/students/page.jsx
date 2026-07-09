@@ -50,7 +50,7 @@ import { Skeleton, RowSkeleton } from "@/components/ui/skeleton"
 
 export default function StudentsPage() {
   const router = useRouter()
-  const { user, isHydrated, isAuthenticated } = useExamStore()
+  const { user, isHydrated, isAuthenticated, currentRole } = useExamStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [students, setStudents] = useState([])
   const [attemptsData, setAttemptsData] = useState([])
@@ -69,11 +69,11 @@ export default function StudentsPage() {
     if (isHydrated && mounted) {
       if (!isAuthenticated) {
         router.push("/login")
-      } else if (user?.role === "student") {
+      } else if (currentRole === "student") {
         router.push("/student")
       }
     }
-  }, [isHydrated, mounted, isAuthenticated, user?.role, router])
+  }, [isHydrated, mounted, isAuthenticated, currentRole, router])
 
   // Dynamic Students Data polling
   useEffect(() => {

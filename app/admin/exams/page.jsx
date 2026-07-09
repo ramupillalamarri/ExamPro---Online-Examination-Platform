@@ -118,7 +118,8 @@ export default function ExamsPage() {
     fetchData, 
     user, 
     isHydrated, 
-    isAuthenticated 
+    isAuthenticated,
+    currentRole 
   } = useExamStore()
 
   const [viewMode, setViewMode] = useState("explorer") // "explorer" or "list"
@@ -152,7 +153,7 @@ export default function ExamsPage() {
     if (isHydrated && mounted) {
       if (!isAuthenticated) {
         router.push("/login")
-      } else if (user?.role === "student") {
+      } else if (currentRole === "student") {
         router.push("/student")
       } else {
         setIsLoading(true)

@@ -7,17 +7,17 @@ import { useExamStore } from "@/lib/store"
 
 export default function TeacherProfilePage() {
   const router = useRouter()
-  const { isHydrated, isAuthenticated, user } = useExamStore()
+  const { isHydrated, isAuthenticated, user, currentRole } = useExamStore()
 
   useEffect(() => {
     if (isHydrated) {
       if (!isAuthenticated) {
         router.push("/login")
-      } else if (user?.role === "student") {
+      } else if (currentRole === "student") {
         router.push("/student")
       }
     }
-  }, [isHydrated, isAuthenticated, user, router])
+  }, [isHydrated, isAuthenticated, currentRole, router])
 
   if (!isHydrated || !isAuthenticated || !user) {
     return null

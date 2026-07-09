@@ -26,20 +26,20 @@ export default function EditExamPage({
 
   const { id } = use(params)
   const router = useRouter()
-  const { exams, folders, updateExam, user, isHydrated, isAuthenticated, fetchData } = useExamStore()
+  const { exams, folders, updateExam, user, isHydrated, isAuthenticated, fetchData, currentRole } = useExamStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (isHydrated) {
       if (!isAuthenticated) {
         router.push("/login")
-      } else if (user?.role === "student") {
+      } else if (currentRole === "student") {
         router.push("/student")
       } else {
         fetchData()
       }
     }
-  }, [isHydrated, isAuthenticated, user, router, fetchData])
+  }, [isHydrated, isAuthenticated, currentRole, router, fetchData])
 
   if (!isHydrated || !isAuthenticated || !user) {
     return null

@@ -6,17 +6,17 @@ import { useExamStore } from "@/lib/store"
 
 export default function DashboardRedirect() {
   const router = useRouter()
-  const { user, isHydrated } = useExamStore()
+  const { user, isHydrated, currentRole } = useExamStore()
 
   useEffect(() => {
     if (isHydrated) {
-      if (user?.role === "student") {
+      if (currentRole === "student") {
         router.replace("/student")
       } else {
         router.replace("/admin")
       }
     }
-  }, [isHydrated, user, router])
+  }, [isHydrated, currentRole, router])
 
   return null
 }

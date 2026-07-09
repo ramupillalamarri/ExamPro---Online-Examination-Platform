@@ -53,7 +53,7 @@ const staggerContainer = {
 
 export default function StudentDashboardPage() {
   const router = useRouter()
-  const { user, exams, folders, attempts, getAttemptStats, isHydrated, isAuthenticated } = useExamStore()
+  const { user, exams, folders, attempts, getAttemptStats, isHydrated, isAuthenticated, currentRole } = useExamStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [folderFilter, setFolderFilter] = useState("all")
   const [selectedExam, setSelectedExam] = useState(null)
@@ -62,11 +62,11 @@ export default function StudentDashboardPage() {
     if (isHydrated) {
       if (!isAuthenticated) {
         router.push("/login")
-      } else if (user?.role === "teacher" || user?.role === "admin") {
+      } else if (currentRole === "teacher" || currentRole === "admin") {
         router.push("/admin")
       }
     }
-  }, [isHydrated, isAuthenticated, user, router])
+  }, [isHydrated, isAuthenticated, currentRole, router])
 
   if (!isHydrated || !isAuthenticated || !user) {
     return null
