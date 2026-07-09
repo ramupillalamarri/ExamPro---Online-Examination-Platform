@@ -94,21 +94,34 @@ export default function AdminDashboard() {
   const router = useRouter()
   const { exams, attempts, folders, user, questions, answers, fetchData, isHydrated, isAuthenticated } = useExamStore()
   const [selectedExamAttempts, setSelectedExamAttempts] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    let active = true
     if (isHydrated) {
       if (!isAuthenticated) {
         router.push("/login")
       } else if (user?.role === "student") {
         router.push("/student")
       } else {
-        fetchData()
+        setIsLoading(true)
+        fetchData().finally(() => {
+          if (active) setIsLoading(false)
+        })
       }
+    }
+    return () => {
+      active = false
     }
   }, [isHydrated, isAuthenticated, user, router, fetchData])
 
-  if (!isHydrated || !isAuthenticated || !user) {
-    return null
+  if (!isHydrated || !isAuthenticated || !user || isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground space-y-4">
+        <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+        <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading dashboard data...</p>
+      </div>
+    )
   }
 
   const publishedExams = (exams || []).filter((e) => e.isPublished)

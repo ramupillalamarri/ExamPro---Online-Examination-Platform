@@ -56,6 +56,7 @@ export default function StudentsPage() {
   const [aiInsightsData, setAiInsightsData] = useState([])
   const [isClearing, setIsClearing] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   // Auth and redirection guard
   useEffect(() => {
@@ -70,8 +71,10 @@ export default function StudentsPage() {
 
   // Dynamic Students Data polling
   useEffect(() => {
-    const loadStudentData = async () => {
+    let active = true
+    const loadStudentData = async (isInitial = false) => {
       if (!user?.id) return
+      if (isInitial) setIsLoading(true)
       try {
         // Also refresh global store data to sync attempts/exams roster class-wide
         await useExamStore.getState().fetchData()
@@ -80,23 +83,35 @@ export default function StudentsPage() {
         const res = await fetch(`/api/students?userId=${user.id}&_t=${Date.now()}`, { cache: 'no-store' })
         if (!res.ok) throw new Error('Failed to fetch students data')
         const data = await res.json()
-        setStudents(data.students || [])
-        setAttemptsData(data.attempts || [])
-        setAiInsightsData(data.aiInsights || [])
+        if (active) {
+          setStudents(data.students || [])
+          setAttemptsData(data.attempts || [])
+          setAiInsightsData(data.aiInsights || [])
+        }
       } catch (error) {
         console.error('Failed to load students data:', error)
+      } finally {
+        if (isInitial && active) setIsLoading(false)
       }
     }
 
     if (user?.id) {
-      loadStudentData()
-      const pollInterval = setInterval(loadStudentData, 5000)
-      return () => clearInterval(pollInterval)
+      loadStudentData(true)
+      const pollInterval = setInterval(() => loadStudentData(false), 5000)
+      return () => {
+        active = false
+        clearInterval(pollInterval)
+      }
     }
   }, [user?.id])
 
-  if (!isHydrated || !isAuthenticated || !user) {
-    return null
+  if (!isHydrated || !isAuthenticated || !user || isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground space-y-4">
+        <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+        <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading students roster...</p>
+      </div>
+    )
   }
 
   const studentStats = useMemo(() => {

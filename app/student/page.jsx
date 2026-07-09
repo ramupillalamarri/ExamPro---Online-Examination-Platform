@@ -53,26 +53,40 @@ export default function StudentDashboard() {
   const { isHydrated, isAuthenticated, user, exams, folders, attempts, answers, aiFeedback, fetchData } = useExamStore()
 
   const [mounted, setMounted] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
   useEffect(() => {
     setMounted(true)
   }, [])
 
   // Define useEffect to handle auth redirect & fetch fresh attempts/rankings
   useEffect(() => {
+    let active = true
     if (isHydrated && mounted) {
       if (!isAuthenticated) {
         router.push("/login")
       } else if (user?.role === "teacher" || user?.role === "admin") {
         router.push("/admin")
       } else {
-        fetchData()
+        setIsLoading(true)
+        fetchData().finally(() => {
+          if (active) setIsLoading(false)
+        })
       }
+    }
+    return () => {
+      active = false
     }
   }, [isHydrated, mounted, isAuthenticated, user, router, fetchData])
 
-  // Return null to prevent rendering while loading/unauthenticated
-  if (!mounted || !isHydrated || !isAuthenticated || !user) {
-    return null
+  // Return loader to prevent rendering while loading/unauthenticated
+  if (!mounted || !isHydrated || !isAuthenticated || !user || isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground space-y-4">
+        <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+        <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading dashboard data...</p>
+      </div>
+    )
   }
 
   // All calculations below only run if authenticated
