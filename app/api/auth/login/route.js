@@ -22,9 +22,12 @@ export async function POST(req) {
       FROM users WHERE email = $1
     `, [email]);
     if (existing.rowCount > 0) {
-      // Update full name / avatar / role if necessary but keep user_code stable
+      // Preserve existing profile custom changes (avatar and name) if they exist
       const user = existing.rows[0];
-      await query(`UPDATE users SET full_name = $1, avatar_url = $2, role = $3 WHERE email = $4`, [name, avatarUrl || '', role, email]);
+      const finalFullName = user.fullName || name;
+      const finalAvatarUrl = user.avatarUrl || avatarUrl || '';
+      
+      await query(`UPDATE users SET full_name = $1, avatar_url = $2, role = $3 WHERE email = $4`, [finalFullName, finalAvatarUrl, role, email]);
       
       // Fetch full, updated user info to return complete profile details
       const updatedUser = await query(`
