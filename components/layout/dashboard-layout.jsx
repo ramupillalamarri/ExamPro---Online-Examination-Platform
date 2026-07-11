@@ -53,7 +53,7 @@ import {
 
 
 export function DashboardLayout({ children }) {
-  const { isHydrated, isAuthenticated, user, logout, currentRole, setCurrentRole } = useExamStore()
+  const { isHydrated, isAuthenticated, user, logout, currentRole, setCurrentRole, activeTeacher } = useExamStore()
   const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -395,6 +395,15 @@ export function DashboardLayout({ children }) {
                 }
               </nav>
             </div>
+
+            {/* Active Teacher Display - only show for student role when set */}
+            {inferredRole === "student" && activeTeacher && (
+              <div className="mx-4 p-3 bg-primary/5 border border-primary/20 rounded-xl space-y-1">
+                <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Active Classroom</p>
+                <p className="text-xs font-semibold text-sidebar-foreground truncate">{activeTeacher.fullName}</p>
+                <p className="text-[10px] text-sidebar-foreground/60 font-mono">Code: {activeTeacher.userCode}</p>
+              </div>
+            )}
 
             {/* Code Entry Section - only show for student role */}
             {inferredRole === "student" && <CodeEntry />}

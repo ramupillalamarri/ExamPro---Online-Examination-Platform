@@ -193,6 +193,18 @@ export async function GET(req) {
     }
     const feedbackRes = await query(feedbackQuery, feedbackParams);
 
+    // Fetch active teacher details
+    let activeTeacher = null;
+    if (activeCode) {
+      const teacherRes = await query(
+        'SELECT full_name as "fullName", user_code as "userCode", email FROM users WHERE user_code = $1',
+        [activeCode]
+      );
+      if (teacherRes.rowCount > 0) {
+        activeTeacher = teacherRes.rows[0];
+      }
+    }
+
     return NextResponse.json({
       folders: foldersRes.rows,
       exams: examsRes.rows,
@@ -201,6 +213,7 @@ export async function GET(req) {
       answers: answersRes.rows,
       aiFeedback: feedbackRes.rows,
       userExists,
+      activeTeacher,
     });
   } catch (error) {
     console.error('GET Bulk Data Error:', error);

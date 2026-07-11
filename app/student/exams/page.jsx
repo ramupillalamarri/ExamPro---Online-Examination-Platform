@@ -70,7 +70,7 @@ const FOLDER_COLORS = [
 
 export default function StudentExamsPage() {
   const router = useRouter()
-  const { user, exams, folders, attempts, getAttemptStats, currentUserCode, fetchData, setCurrentUserCode, isHydrated } = useExamStore()
+  const { user, exams, folders, attempts, getAttemptStats, currentUserCode, fetchData, setCurrentUserCode, isHydrated, activeTeacher } = useExamStore()
   
   const [viewMode, setViewMode] = useState("explorer") // "explorer" or "list"
   const [currentFolderId, setCurrentFolderId] = useState(null)
@@ -207,12 +207,21 @@ export default function StudentExamsPage() {
             </h1>
             <Sparkles className="h-5 w-5 text-primary" />
           </div>
-          <p className="text-muted-foreground text-sm">
-            {viewMode === "explorer" 
-              ? "Browse nested subjects, folders, and exams hierarchically" 
-              : "Search and filter a complete list of all active examinations"
-            }
-          </p>
+          {activeTeacher ? (
+            <p className="text-muted-foreground text-sm flex items-center gap-2">
+              <span>Viewing classroom:</span>
+              <span className="font-bold text-foreground bg-primary/10 px-2 py-0.5 rounded text-xs border border-primary/20">
+                {activeTeacher.fullName} ({activeTeacher.userCode})
+              </span>
+            </p>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              {viewMode === "explorer" 
+                ? "Browse nested subjects, folders, and exams hierarchically" 
+                : "Search and filter a complete list of all active examinations"
+              }
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2.5 self-start md:self-auto">

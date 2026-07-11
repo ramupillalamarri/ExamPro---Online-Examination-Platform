@@ -53,7 +53,7 @@ const staggerContainer = {
 
 export default function StudentDashboardPage() {
   const router = useRouter()
-  const { user, exams, folders, attempts, getAttemptStats, isHydrated, isAuthenticated, currentRole } = useExamStore()
+  const { user, exams, folders, attempts, getAttemptStats, isHydrated, isAuthenticated, currentRole, activeTeacher } = useExamStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [folderFilter, setFolderFilter] = useState("all")
   const [selectedExam, setSelectedExam] = useState(null)
@@ -74,10 +74,8 @@ export default function StudentDashboardPage() {
 
   const publishedExams = (exams || []).filter((e) => e.isPublished)
 
-  // Filter exams that are visible to all students (created by admin or system level accounts)
-  const publicExams = publishedExams.filter(
-    (exam) => exam.createdBy === "admin-1" || exam.createdBy === "admin"
-  )
+  // If a student is accessing a custom teacher classroom, show all exams returned for that classroom context
+  const publicExams = publishedExams;
 
   const filteredExams = publicExams.filter((exam) => {
     const matchesSearch = exam.title
@@ -124,12 +122,21 @@ export default function StudentDashboardPage() {
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">Dashboard</h1>
             <LayoutDashboard className="h-5 w-5 text-primary" />
           </div>
-          <p className="text-muted-foreground">
-            Exams visible to all students. No access code required!
-          </p>
+          {activeTeacher ? (
+            <p className="text-muted-foreground flex items-center gap-2">
+              <span>Currently accessing classroom:</span>
+              <span className="font-bold text-foreground bg-primary/10 px-2 py-0.5 rounded text-xs border border-primary/20">
+                {activeTeacher.fullName} ({activeTeacher.userCode})
+              </span>
+            </p>
+          ) : (
+            <p className="text-muted-foreground">
+              Exams visible to all students. No access code required!
+            </p>
+          )}
         </div>
         <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 self-start md:self-auto">
-          {publicExams.length} Public Exams
+          {publicExams.length} Exams Available
         </Badge>
       </motion.div>
 
