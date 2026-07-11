@@ -398,10 +398,21 @@ export function DashboardLayout({ children }) {
 
             {/* Active Teacher Display - only show for student role when set */}
             {inferredRole === "student" && activeTeacher && (
-              <div className="mx-4 p-3 bg-primary/5 border border-primary/20 rounded-xl space-y-1">
-                <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Active Classroom</p>
-                <p className="text-xs font-semibold text-sidebar-foreground truncate">{activeTeacher.fullName}</p>
-                <p className="text-[10px] text-sidebar-foreground/60 font-mono">Code: {activeTeacher.userCode}</p>
+              <div className="mx-4 p-3.5 bg-gradient-to-br from-sidebar-primary/10 to-sidebar-primary/5 border border-sidebar-primary/25 rounded-2xl shadow-lg shadow-sidebar-primary/5 flex items-start gap-3 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-sidebar-primary/5 rounded-full blur-xl group-hover:bg-sidebar-primary/10 transition-colors duration-500" />
+                <div className="p-2 rounded-xl bg-sidebar-primary/15 text-sidebar-primary border border-sidebar-primary/20 shrink-0">
+                  <GraduationCap className="h-4.5 w-4.5" />
+                </div>
+                <div className="flex-1 min-w-0 space-y-1 relative z-10">
+                  <p className="text-[10px] font-extrabold text-sidebar-primary tracking-wider uppercase">Active Classroom</p>
+                  <p className="text-xs font-bold text-sidebar-foreground truncate leading-tight">{activeTeacher.fullName}</p>
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    <span className="text-[9px] font-semibold text-sidebar-foreground/50 uppercase">Code:</span>
+                    <span className="text-[10px] font-bold font-mono text-sidebar-foreground/80 bg-sidebar-foreground/5 border border-sidebar-foreground/10 px-1.5 py-0.5 rounded-md">
+                      {activeTeacher.userCode}
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
 

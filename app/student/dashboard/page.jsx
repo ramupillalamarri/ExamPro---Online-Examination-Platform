@@ -35,7 +35,8 @@ import {
   Play,
   Sparkles,
   Filter,
-  LayoutDashboard
+  LayoutDashboard,
+  GraduationCap
 } from "lucide-react"
 
 const fadeInUp = {
@@ -123,12 +124,17 @@ export default function StudentDashboardPage() {
             <LayoutDashboard className="h-5 w-5 text-primary" />
           </div>
           {activeTeacher ? (
-            <p className="text-muted-foreground flex items-center gap-2">
-              <span>Currently accessing classroom:</span>
-              <span className="font-bold text-foreground bg-primary/10 px-2 py-0.5 rounded text-xs border border-primary/20">
-                {activeTeacher.fullName} ({activeTeacher.userCode})
-              </span>
-            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <span className="text-xs font-medium text-muted-foreground">Classroom context:</span>
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/15 rounded-full pl-2.5 pr-3.5 py-1 text-xs shadow-sm hover:border-primary/25 transition-colors">
+                <GraduationCap className="h-3.5 w-3.5 text-primary animate-pulse" />
+                <span className="font-semibold text-foreground">{activeTeacher.fullName}</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-primary/30" />
+                <span className="font-bold font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded-md text-[10px]">
+                  {activeTeacher.userCode}
+                </span>
+              </div>
+            </div>
           ) : (
             <p className="text-muted-foreground">
               Exams visible to all students. No access code required!
