@@ -12,7 +12,10 @@ export async function GET(req) {
     let targetUserCode = userCode;
     let isStudent = false;
 
-    if (userId) {
+    if (userCode) {
+      targetUserCode = userCode;
+      isStudent = true;
+    } else if (userId) {
       const userRes = await query('SELECT user_code, role FROM users WHERE id = $1', [userId]);
       if (userRes.rowCount > 0) {
         const role = userRes.rows[0].role;
@@ -22,8 +25,6 @@ export async function GET(req) {
           isStudent = true;
         }
       }
-    } else if (userCode) {
-      isStudent = true;
     }
 
     if (!targetUserCode) {

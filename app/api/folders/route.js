@@ -11,7 +11,9 @@ export async function GET(req) {
 
     let targetUserCode = userCode;
 
-    if (userId) {
+    if (userCode) {
+      targetUserCode = userCode;
+    } else if (userId) {
       const userRes = await query('SELECT user_code, role FROM users WHERE id = $1', [userId]);
       if (userRes.rowCount > 0) {
         const role = userRes.rows[0].role;

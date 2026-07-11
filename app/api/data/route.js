@@ -27,10 +27,10 @@ export async function GET(req) {
     }
 
     let activeCode = '';
-    if (isTeacher) {
-      activeCode = teacherUserCode;
-    } else if (userCode) {
+    if (userCode) {
       activeCode = userCode;
+    } else if (isTeacher) {
+      activeCode = teacherUserCode;
     } else if (examId) {
       const examInfo = await getExamById(examId);
       if (examInfo) {
