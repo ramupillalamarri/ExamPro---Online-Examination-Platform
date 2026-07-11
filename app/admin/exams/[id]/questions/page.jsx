@@ -762,7 +762,6 @@ export default function QuestionsPage({
                 <SelectContent className="rounded-xl">
                   <SelectItem value="mcq">Multiple Choice (MCQ - Single Answer)</SelectItem>
                   <SelectItem value="msq">Multiple Selection (MSQ - Multiple Answers)</SelectItem>
-                  <SelectItem value="text">Descriptive / Essay (Free Text)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
