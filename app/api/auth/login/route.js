@@ -22,21 +22,7 @@ export async function POST(req) {
       FROM users WHERE email = $1
     `, [email]);
     if (existing.rowCount > 0) {
-      // Preserve existing profile custom changes (avatar and name) if they exist
-      const user = existing.rows[0];
-      const finalFullName = user.fullName || name;
-      const finalAvatarUrl = user.avatarUrl || avatarUrl || '';
-      
-      await query(`UPDATE users SET full_name = $1, avatar_url = $2, role = $3 WHERE email = $4`, [finalFullName, finalAvatarUrl, role, email]);
-      
-      // Fetch full, updated user info to return complete profile details
-      const updatedUser = await query(`
-        SELECT id, email, full_name as "fullName", avatar_url as "avatarUrl", role, user_code as "userCode", 
-               age, phone_number as "phoneNumber", address, college, major, graduation_year as "graduationYear", bio, 
-               created_at as "createdAt" 
-        FROM users WHERE email = $1
-      `, [email]);
-      const loggedUser = updatedUser.rows[0];
+      const loggedUser = existing.rows[0];
       if (loggedUser && (loggedUser.role === 'admin' || loggedUser.role === 'teacher') && loggedUser.userCode) {
         await ensureTeacherTables(loggedUser.userCode);
       }

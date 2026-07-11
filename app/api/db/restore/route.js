@@ -32,7 +32,7 @@ export async function GET(request) {
         id VARCHAR(255) PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
         full_name VARCHAR(255),
-        avatar_url VARCHAR(255),
+        avatar_url TEXT,
         user_code VARCHAR(6) UNIQUE,
         role VARCHAR(50),
         age INTEGER,
