@@ -141,11 +141,11 @@ export default function StudentDashboard() {
   let totalUnanswered = 0;
   
   completedAttempts.forEach(attempt => {
-    const attemptAnswers = answers.filter(a => a.attemptId === attempt.id);
-    const examQuestionsCount = exams.find(e => e.id === attempt.examId)?.questionCount || attemptAnswers.length;
+    const attemptAnswers = (answers || []).filter(a => a && a.attemptId === attempt.id);
+    const examQuestionsCount = (exams || []).find(e => e && e.id === attempt.examId)?.questionCount || attemptAnswers.length;
     
-    const correctInAttempt = attemptAnswers.filter(a => a.isCorrect).length;
-    const answeredInAttempt = attemptAnswers.filter(a => a.selectedOptionId).length;
+    const correctInAttempt = attemptAnswers.filter(a => a && a.isCorrect).length;
+    const answeredInAttempt = attemptAnswers.filter(a => a && a.selectedOptionId).length;
     
     totalCorrect += correctInAttempt;
     totalIncorrect += (answeredInAttempt - correctInAttempt);
@@ -598,13 +598,15 @@ export default function StudentDashboard() {
                       {/* Aggregate top 2 weak topics from the last few feedbacks */}
                       {(() => {
                         const allWeakTopics = {};
-                        aiFeedback.forEach(fb => {
-                          if (Array.isArray(fb.weakTopics)) {
+                        (aiFeedback || []).forEach(fb => {
+                          if (fb && Array.isArray(fb.weakTopics)) {
                             fb.weakTopics.forEach((wt) => {
-                              if (!allWeakTopics[wt.topic]) {
-                                allWeakTopics[wt.topic] = { subject: wt.subject, count: 0 };
+                              if (wt && wt.topic) {
+                                if (!allWeakTopics[wt.topic]) {
+                                  allWeakTopics[wt.topic] = { subject: wt.subject, count: 0 };
+                                }
+                                allWeakTopics[wt.topic].count += wt.questionCount || 1;
                               }
-                              allWeakTopics[wt.topic].count += wt.questionCount || 1;
                             });
                           }
                         });
@@ -637,9 +639,9 @@ export default function StudentDashboard() {
                   animate="visible"
                   className="space-y-5 mt-6"
                 >
-                  {Array.from(new Set(folders.map((f) => f.name))).map((subject, index) => {
+                  {Array.from(new Set((folders || []).filter(f => f && f.name).map((f) => f.name))).map((subject, index) => {
                     const subjectAttempts = completedAttempts.filter((a) => {
-                      const exam = exams.find((e) => e.id === a.examId)
+                      const exam = (exams || []).find((e) => e && e.id === a.examId)
                       return exam?.folderName === subject
                     })
 
