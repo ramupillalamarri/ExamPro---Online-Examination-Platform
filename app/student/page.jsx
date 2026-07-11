@@ -31,7 +31,8 @@ import {
   Gift,
   Bell,
   AlertCircle,
-  GraduationCap
+  GraduationCap,
+  Home
 } from "lucide-react"
 import { Skeleton, RowSkeleton } from "@/components/ui/skeleton"
 
