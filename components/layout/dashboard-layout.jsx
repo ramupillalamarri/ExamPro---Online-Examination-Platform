@@ -53,7 +53,7 @@ import {
 
 
 export function DashboardLayout({ children }) {
-  const { isHydrated, isAuthenticated, user, logout, currentRole, setCurrentRole, activeTeacher } = useExamStore()
+  const { isHydrated, isAuthenticated, user, logout, currentRole, setCurrentRole, activeTeacher, setCurrentUserCode } = useExamStore()
   const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -404,7 +404,18 @@ export function DashboardLayout({ children }) {
                   <GraduationCap className="h-4.5 w-4.5" />
                 </div>
                 <div className="flex-1 min-w-0 space-y-1 relative z-10">
-                  <p className="text-[10px] font-extrabold text-blue-400/90 tracking-wider uppercase">Active Classroom</p>
+                  <div className="flex items-center justify-between gap-1">
+                    <p className="text-[10px] font-extrabold text-blue-400/90 tracking-wider uppercase">Active Classroom</p>
+                    {activeTeacher.userCode !== '455770' && (
+                      <button 
+                        onClick={() => setCurrentUserCode('455770')}
+                        className="text-[9.5px] font-extrabold text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-0.5 bg-rose-500/10 hover:bg-rose-500/20 px-1.5 py-0.5 rounded cursor-pointer border border-rose-500/20"
+                        title="Reset to default exams"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
                   <p className="text-xs font-bold text-slate-100 truncate leading-tight">{activeTeacher.fullName}</p>
                   <div className="flex items-center gap-2 pt-0.5">
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Code</span>
