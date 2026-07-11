@@ -398,17 +398,17 @@ export function DashboardLayout({ children }) {
 
             {/* Active Teacher Display - only show for student role when set */}
             {inferredRole === "student" && activeTeacher && (
-              <div className="mx-4 p-3.5 bg-gradient-to-br from-sidebar-primary/10 to-sidebar-primary/5 border border-sidebar-primary/25 rounded-2xl shadow-lg shadow-sidebar-primary/5 flex items-start gap-3 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-sidebar-primary/5 rounded-full blur-xl group-hover:bg-sidebar-primary/10 transition-colors duration-500" />
-                <div className="p-2 rounded-xl bg-sidebar-primary/15 text-sidebar-primary border border-sidebar-primary/20 shrink-0">
+              <div className="mx-4 p-3.5 bg-slate-900/60 border border-slate-800/80 rounded-2xl shadow-lg shadow-black/20 flex items-start gap-3 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/5 rounded-full blur-xl group-hover:bg-blue-500/10 transition-all duration-500" />
+                <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0 shadow-inner">
                   <GraduationCap className="h-4.5 w-4.5" />
                 </div>
                 <div className="flex-1 min-w-0 space-y-1 relative z-10">
-                  <p className="text-[10px] font-extrabold text-sidebar-primary tracking-wider uppercase">Active Classroom</p>
-                  <p className="text-xs font-bold text-sidebar-foreground truncate leading-tight">{activeTeacher.fullName}</p>
-                  <div className="flex items-center gap-1.5 pt-0.5">
-                    <span className="text-[9px] font-semibold text-sidebar-foreground/50 uppercase">Code:</span>
-                    <span className="text-[10px] font-bold font-mono text-sidebar-foreground/80 bg-sidebar-foreground/5 border border-sidebar-foreground/10 px-1.5 py-0.5 rounded-md">
+                  <p className="text-[10px] font-extrabold text-blue-400/90 tracking-wider uppercase">Active Classroom</p>
+                  <p className="text-xs font-bold text-slate-100 truncate leading-tight">{activeTeacher.fullName}</p>
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Code</span>
+                    <span className="text-[10px] font-bold font-mono text-blue-300 bg-blue-500/15 border border-blue-500/20 px-2 py-0.5 rounded-lg">
                       {activeTeacher.userCode}
                     </span>
                   </div>

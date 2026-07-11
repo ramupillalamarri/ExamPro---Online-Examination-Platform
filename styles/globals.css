@@ -122,4 +122,24 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Responsive & context-aware cursors */
+  a, button, select, input[type="submit"], input[type="button"], [role="button"], .cursor-pointer {
+    cursor: pointer !important;
+  }
+  input[type="text"], input[type="password"], input[type="email"], input[type="number"], input[type="search"], textarea, [contenteditable="true"] {
+    cursor: text;
+  }
+  label {
+    cursor: pointer;
+  }
+  .cursor-col-resize {
+    cursor: col-resize !important;
+  }
+  .cursor-row-resize {
+    cursor: row-resize !important;
+  }
+  .cursor-not-allowed, :disabled, [disabled] {
+    cursor: not-allowed !important;
+  }
 }
