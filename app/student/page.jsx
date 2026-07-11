@@ -30,7 +30,8 @@ import {
   Rocket,
   Gift,
   Bell,
-  AlertCircle
+  AlertCircle,
+  GraduationCap
 } from "lucide-react"
 import { Skeleton, RowSkeleton } from "@/components/ui/skeleton"
 
@@ -51,7 +52,7 @@ const scaleIn = {
 
 export default function StudentDashboard() {
   const router = useRouter()
-  const { isHydrated, isAuthenticated, user, exams, folders, attempts, answers, aiFeedback, fetchData, currentRole } = useExamStore()
+  const { isHydrated, isAuthenticated, user, exams, folders, attempts, answers, aiFeedback, fetchData, currentRole, activeTeacher, currentUserCode, setCurrentUserCode } = useExamStore()
 
   const [mounted, setMounted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -222,18 +223,44 @@ export default function StudentDashboard() {
               &#128075;
             </motion.span>
           </div>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="text-muted-foreground flex items-center gap-2"
-          >
-            <Zap className="h-4 w-4 text-warning" />
-            Ready to test your knowledge? Here&apos;s your progress.
-          </motion.p>
+          {activeTeacher ? (
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <span className="text-xs font-medium text-muted-foreground">Classroom context:</span>
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/15 rounded-full pl-2.5 pr-3.5 py-1 text-xs shadow-sm hover:border-primary/25 transition-colors">
+                <GraduationCap className="h-3.5 w-3.5 text-primary animate-pulse" />
+                <span className="font-semibold text-foreground">{activeTeacher.fullName}</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-primary/30" />
+                <span className="font-bold font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded-md text-[10px]">
+                  {activeTeacher.userCode}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-muted-foreground flex items-center gap-2"
+            >
+              <Zap className="h-4 w-4 text-warning" />
+              Ready to test your knowledge? Here&apos;s your progress.
+            </motion.p>
+          )}
         </div>
         
         <div className="flex items-center gap-3">
+          {currentUserCode && currentUserCode !== '455770' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentUserCode('455770')}
+              className="bg-primary/5 text-primary border-primary/20 hover:bg-primary/10 flex items-center gap-2 font-bold rounded-xl h-10 px-3.5"
+              title="Return to default teacher exams"
+            >
+              <Home className="h-4 w-4" />
+              Default Exams
+            </Button>
+          )}
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button variant="outline" size="icon" className="relative">
               <Bell className="h-4 w-4" />
